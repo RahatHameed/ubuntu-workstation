@@ -22,19 +22,19 @@ set -e
 # ============================================
 # Setup
 # ============================================
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="https://github.com/RahatHameed/ubuntu-workstation"
-INSTALL_DIR="$HOME/.ubuntu-setup-scripts"
+CLONE_DIR="$HOME/.ubuntu-setup-scripts"
 
 # Check if running from curl pipe
-if [[ ! -f "$SCRIPT_DIR/modules/common.sh" ]]; then
+if [[ ! -f "$ROOT_DIR/modules/common.sh" ]]; then
     echo "Downloading ubuntu-setup-scripts..."
-    git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
-    cd "$INSTALL_DIR"
-    SCRIPT_DIR="$INSTALL_DIR"
+    git clone --depth 1 "$REPO_URL" "$CLONE_DIR"
+    cd "$CLONE_DIR"
+    ROOT_DIR="$CLONE_DIR"
 fi
 
-source "$SCRIPT_DIR/modules/common.sh"
+source "$ROOT_DIR/modules/common.sh"
 
 # ============================================
 # Defaults
@@ -136,12 +136,12 @@ run_interactive() {
 
     for mod in "${modules[@]}"; do
         case "$mod" in
-            shell) source "$SCRIPT_DIR/modules/shell.sh" && install_shell ;;
-            git) source "$SCRIPT_DIR/modules/git.sh" && install_git ;;
-            ssh) source "$SCRIPT_DIR/modules/ssh.sh" && install_ssh ;;
-            apps) source "$SCRIPT_DIR/modules/apps.sh" && install_apps_interactive ;;
-            docker) source "$SCRIPT_DIR/modules/docker.sh" && install_docker ;;
-            desktop) source "$SCRIPT_DIR/modules/desktop.sh" && install_desktop ;;
+            shell) source "$ROOT_DIR/modules/shell.sh" && install_shell ;;
+            git) source "$ROOT_DIR/modules/git.sh" && install_git ;;
+            ssh) source "$ROOT_DIR/modules/ssh.sh" && install_ssh ;;
+            apps) source "$ROOT_DIR/modules/apps.sh" && install_apps_interactive ;;
+            docker) source "$ROOT_DIR/modules/docker.sh" && install_docker ;;
+            desktop) source "$ROOT_DIR/modules/desktop.sh" && install_desktop ;;
         esac
     done
 
@@ -158,27 +158,27 @@ run_module() {
 
     case "$module" in
         shell)
-            source "$SCRIPT_DIR/modules/shell.sh"
+            source "$ROOT_DIR/modules/shell.sh"
             install_shell
             ;;
         git)
-            source "$SCRIPT_DIR/modules/git.sh"
+            source "$ROOT_DIR/modules/git.sh"
             install_git
             ;;
         ssh)
-            source "$SCRIPT_DIR/modules/ssh.sh"
+            source "$ROOT_DIR/modules/ssh.sh"
             install_ssh
             ;;
         apps)
-            source "$SCRIPT_DIR/modules/apps.sh"
+            source "$ROOT_DIR/modules/apps.sh"
             install_apps "$CONFIG_FILE"
             ;;
         docker)
-            source "$SCRIPT_DIR/modules/docker.sh"
+            source "$ROOT_DIR/modules/docker.sh"
             install_docker
             ;;
         desktop)
-            source "$SCRIPT_DIR/modules/desktop.sh"
+            source "$ROOT_DIR/modules/desktop.sh"
             install_desktop "$CONFIG_FILE"
             ;;
         all)
@@ -209,22 +209,22 @@ run_all() {
     apt_install wget
 
     # Run all modules
-    source "$SCRIPT_DIR/modules/shell.sh"
+    source "$ROOT_DIR/modules/shell.sh"
     install_shell
 
-    source "$SCRIPT_DIR/modules/git.sh"
+    source "$ROOT_DIR/modules/git.sh"
     install_git
 
-    source "$SCRIPT_DIR/modules/ssh.sh"
+    source "$ROOT_DIR/modules/ssh.sh"
     install_ssh
 
-    source "$SCRIPT_DIR/modules/apps.sh"
+    source "$ROOT_DIR/modules/apps.sh"
     install_apps "$CONFIG_FILE"
 
-    source "$SCRIPT_DIR/modules/docker.sh"
+    source "$ROOT_DIR/modules/docker.sh"
     install_docker
 
-    source "$SCRIPT_DIR/modules/desktop.sh"
+    source "$ROOT_DIR/modules/desktop.sh"
     install_desktop "$CONFIG_FILE"
 }
 
