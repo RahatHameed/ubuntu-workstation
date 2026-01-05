@@ -1,0 +1,57 @@
+# Ubuntu Setup Scripts Configuration
+# Copy this file to config.yaml and customize
+
+# ============================================
+# Modules to install (true/false)
+# ============================================
+modules:
+  shell: true        # Zsh + Oh My Zsh
+  git: true          # Git configuration + aliases
+  ssh: true          # SSH key + agent setup
+  apps: true         # Work applications
+  docker: true       # Docker Engine + Desktop
+  desktop: true      # Plank dock, GNOME tweaks
+
+# ============================================
+# Applications to install
+# Comment out apps you don't need
+# ============================================
+apps:
+  - chrome
+  - slack
+  - teams
+  - jetbrains-toolbox
+  # - vscode
+  # - discord
+  # - zoom
+  # - postman
+  # Optional (uncomment to install):
+  # - spotify
+  # - dbeaver
+
+# ============================================
+# Desktop settings
+# ============================================
+# Install WhiteSur macOS-style theme automatically
+install_theme: false
+
+# Font scaling factor (1.0 = normal, 1.25 = larger)
+font_scale: 1.25
+
+# ============================================
+# Startup applications
+# Apps to launch on login (used by startup-office.sh)
+# ============================================
+startup_apps:
+  - phpstorm
+  - slack
+  - google-chrome
+  - plank
+  - docker-desktop
+  - gnome-terminal
+
+# ============================================
+# Optional tools
+# ============================================
+# Install Claude CLI
+install_claude: false
