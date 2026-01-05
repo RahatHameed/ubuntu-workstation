@@ -4,6 +4,9 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Connect to VPN first (configure provider in vpn/vpn-connect.sh)
+"$SCRIPT_DIR/../vpn/vpn-connect.sh" connect
+
 # Kill orphaned docker-proxy processes BEFORE starting Docker Desktop
 pkill -9 -f docker-proxy 2>/dev/null
 

@@ -73,6 +73,13 @@ install_dbeaver() {
     snap_install "dbeaver-ce"
 }
 
+install_tigervnc() {
+    apt_install "tigervnc-standalone-server"
+    apt_install "tigervnc-viewer"
+    print_warning "Run 'vncpasswd' to set VNC password"
+    print_warning "Run 'vncserver :1' to start VNC server"
+}
+
 # Main function - installs based on config or all by default
 install_apps() {
     local config_file="${1:-}"
@@ -92,6 +99,7 @@ install_apps() {
         # Optional apps (not installed by default)
         config_has "$config_file" "apps" "spotify" && install_spotify
         config_has "$config_file" "apps" "dbeaver" && install_dbeaver
+        config_has "$config_file" "apps" "tigervnc" && install_tigervnc
     else
         # Default: install core work apps only
         install_chrome
@@ -117,6 +125,7 @@ install_apps_interactive() {
     confirm "Install Zoom?" && apps+=("zoom")
     confirm "Install Postman?" && apps+=("postman")
     confirm "Install DBeaver?" && apps+=("dbeaver")
+    confirm "Install TigerVNC?" && apps+=("tigervnc")
 
     echo ""
     for app in "${apps[@]}"; do
@@ -131,6 +140,7 @@ install_apps_interactive() {
             zoom) install_zoom ;;
             postman) install_postman ;;
             dbeaver) install_dbeaver ;;
+            tigervnc) install_tigervnc ;;
         esac
     done
 }

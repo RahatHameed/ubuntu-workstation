@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -i, --interactive   Interactive mode (prompts for each option)"
             echo "  -c, --config FILE   Use custom config file"
             echo "  -m, --module NAME   Install specific module only"
-            echo "                      Modules: shell, apps, docker, desktop, all"
+            echo "                      Modules: shell, git, ssh, apps, docker, desktop, vpn, all"
             echo "  --dry-run           Show what would be installed"
             echo "  --claude            Include Claude CLI installation"
             echo ""
@@ -131,6 +131,7 @@ run_interactive() {
     confirm "Install work applications?" && modules+=("apps")
     confirm "Install Docker?" && modules+=("docker")
     confirm "Install desktop customizations (Plank, fonts)?" && modules+=("desktop")
+    confirm "Install Mullvad VPN?" && modules+=("vpn")
 
     echo ""
 
@@ -142,6 +143,7 @@ run_interactive() {
             apps) source "$ROOT_DIR/modules/apps.sh" && install_apps_interactive ;;
             docker) source "$ROOT_DIR/modules/docker.sh" && install_docker ;;
             desktop) source "$ROOT_DIR/modules/desktop.sh" && install_desktop ;;
+            vpn) source "$ROOT_DIR/modules/vpn.sh" && install_vpn ;;
         esac
     done
 
@@ -181,12 +183,16 @@ run_module() {
             source "$ROOT_DIR/modules/desktop.sh"
             install_desktop "$CONFIG_FILE"
             ;;
+        vpn)
+            source "$ROOT_DIR/modules/vpn.sh"
+            install_vpn
+            ;;
         all)
             run_all
             ;;
         *)
             print_error "Unknown module: $module"
-            echo "Available modules: shell, git, ssh, apps, docker, desktop, all"
+            echo "Available modules: shell, git, ssh, apps, docker, desktop, vpn, all"
             exit 1
             ;;
     esac
@@ -226,6 +232,9 @@ run_all() {
 
     source "$ROOT_DIR/modules/desktop.sh"
     install_desktop "$CONFIG_FILE"
+
+    source "$ROOT_DIR/modules/vpn.sh"
+    install_vpn
 }
 
 # ============================================
@@ -274,6 +283,7 @@ main() {
     [[ -z "$MODULE" || "$MODULE" == "apps" || "$MODULE" == "all" ]] && echo "  - Work applications"
     [[ -z "$MODULE" || "$MODULE" == "docker" || "$MODULE" == "all" ]] && echo "  - Docker Engine + Desktop"
     [[ -z "$MODULE" || "$MODULE" == "desktop" || "$MODULE" == "all" ]] && echo "  - Desktop customizations"
+    [[ -z "$MODULE" || "$MODULE" == "vpn" || "$MODULE" == "all" ]] && echo "  - Mullvad VPN"
 
     echo ""
     echo "Next steps:"

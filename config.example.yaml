@@ -11,6 +11,7 @@ modules:
   apps: true         # Work applications
   docker: true       # Docker Engine + Desktop
   desktop: true      # Plank dock, GNOME tweaks
+  vpn: true          # VPN client
 
 # ============================================
 # Applications to install
@@ -28,6 +29,7 @@ apps:
   # Optional (uncomment to install):
   # - spotify
   # - dbeaver
+  # - tigervnc
 
 # ============================================
 # Desktop settings
@@ -49,6 +51,25 @@ startup_apps:
   - plank
   - docker-desktop
   - gnome-terminal
+
+# ============================================
+# VPN Configuration
+# ============================================
+vpn:
+  # Provider: mullvad, nordvpn, protonvpn
+  provider: mullvad
+
+  # Default country code for VPN connection
+  default_country: de
+
+  # Auto-connect on startup
+  auto_connect: false
+
+  # Account credentials (provider-specific)
+  # Mullvad: account number (16 digits)
+  # NordVPN: leave empty (uses browser login)
+  # ProtonVPN: leave empty (uses browser login)
+  account_number: ""
 
 # ============================================
 # Optional tools

@@ -139,3 +139,33 @@ config_has() {
     local items=$(parse_config_list "$config_file" "$section")
     [[ " $items " == *" $item "* ]]
 }
+
+# Parse nested YAML value (e.g., "vpn.provider" for vpn: provider: value)
+# Usage: parse_yaml config.yaml "vpn.provider" "default_value"
+parse_yaml() {
+    local config_file="$1"
+    local key_path="$2"
+    local default="${3:-}"
+
+    if [[ ! -f "$config_file" ]]; then
+        echo "$default"
+        return
+    fi
+
+    # Split key path (e.g., "vpn.provider" -> "vpn" and "provider")
+    local section="${key_path%%.*}"
+    local key="${key_path#*.}"
+
+    # If no dot in path, use simple parse
+    if [[ "$section" == "$key" ]]; then
+        local value=$(parse_config "$config_file" "$key")
+        echo "${value:-$default}"
+        return
+    fi
+
+    # Parse nested value - find section, then find key within it
+    # Extract from section start to next top-level key or EOF
+    local value=$(sed -n "/^${section}:$/,/^[a-zA-Z_]/p" "$config_file" | grep "^  ${key}:" | head -1 | sed "s/^  ${key}:[[:space:]]*//" | tr -d '"' | tr -d "'")
+
+    echo "${value:-$default}"
+}

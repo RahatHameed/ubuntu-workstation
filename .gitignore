@@ -13,3 +13,6 @@ Thumbs.db
 # Temp files
 *.tmp
 *.bak
+
+# User config (contains credentials)
+config.yaml

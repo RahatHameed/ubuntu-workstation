@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  -h, --help          Show this help message"
             echo "  -m, --module NAME   Uninstall specific module"
-            echo "                      Modules: shell, git, ssh, apps, docker, desktop"
+            echo "                      Modules: shell, git, ssh, apps, docker, desktop, vpn"
             echo "  --all               Uninstall everything"
             echo "  --dry-run           Show what would be removed"
             echo ""
@@ -283,6 +283,57 @@ uninstall_desktop() {
     print_warning "Fonts kept (remove manually: sudo apt remove fonts-inter fonts-roboto)"
 }
 
+uninstall_vpn() {
+    print_section "Uninstalling VPN"
+
+    local vpn_found=false
+
+    # Mullvad
+    if command_exists mullvad; then
+        vpn_found=true
+        print_info "Removing Mullvad VPN..."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would disconnect and remove Mullvad VPN"
+        else
+            mullvad disconnect 2>/dev/null || true
+            run sudo apt remove -y mullvad-vpn
+            sudo rm -f /etc/apt/sources.list.d/mullvad.list
+            sudo rm -f /usr/share/keyrings/mullvad-keyring.asc
+            print_status "Mullvad VPN removed"
+        fi
+    fi
+
+    # NordVPN
+    if command_exists nordvpn; then
+        vpn_found=true
+        print_info "Removing NordVPN..."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would disconnect and remove NordVPN"
+        else
+            nordvpn disconnect 2>/dev/null || true
+            run sudo apt remove -y nordvpn
+            print_status "NordVPN removed"
+        fi
+    fi
+
+    # ProtonVPN
+    if command_exists protonvpn-cli; then
+        vpn_found=true
+        print_info "Removing ProtonVPN..."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would disconnect and remove ProtonVPN"
+        else
+            protonvpn-cli disconnect 2>/dev/null || true
+            run sudo apt remove -y protonvpn-gnome-desktop protonvpn-cli
+            print_status "ProtonVPN removed"
+        fi
+    fi
+
+    if [[ "$vpn_found" == false ]]; then
+        print_status "No VPN installed"
+    fi
+}
+
 # ============================================
 # Interactive mode
 # ============================================
@@ -298,6 +349,7 @@ run_interactive() {
     confirm "Uninstall applications (Chrome, Slack, etc.)?" && uninstall_apps
     confirm "Uninstall Docker?" && uninstall_docker
     confirm "Remove desktop customizations?" && uninstall_desktop
+    confirm "Uninstall Mullvad VPN?" && uninstall_vpn
 }
 
 # ============================================
@@ -311,9 +363,10 @@ run_module() {
         apps) uninstall_apps ;;
         docker) uninstall_docker ;;
         desktop) uninstall_desktop ;;
+        vpn) uninstall_vpn ;;
         *)
             print_error "Unknown module: $MODULE"
-            echo "Available modules: shell, git, ssh, apps, docker, desktop"
+            echo "Available modules: shell, git, ssh, apps, docker, desktop, vpn"
             exit 1
             ;;
     esac
@@ -333,6 +386,7 @@ run_all() {
         fi
     fi
 
+    uninstall_vpn
     uninstall_desktop
     uninstall_apps
     uninstall_docker

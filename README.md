@@ -36,6 +36,7 @@ cd ubuntu-workstation
 | `apps` | Chrome, Slack, Teams, JetBrains Toolbox, etc. |
 | `docker` | Docker Engine + Docker Desktop |
 | `desktop` | Plank dock, GNOME tweaks, fonts |
+| `vpn` | Mullvad, NordVPN, or ProtonVPN |
 
 ### Available Applications
 
@@ -84,6 +85,7 @@ Choose what to install step by step:
 ./install.sh -m apps       # Only applications
 ./install.sh -m docker     # Only Docker
 ./install.sh -m desktop    # Only desktop customization
+./install.sh -m vpn        # Only VPN setup
 ```
 
 ### Dry-Run Mode
@@ -166,12 +168,20 @@ ubuntu-setup-scripts/
 │   ├── ssh.sh              # SSH key + agent setup
 │   ├── apps.sh             # Work applications
 │   ├── docker.sh           # Docker setup
-│   └── desktop.sh          # Desktop customization
+│   ├── desktop.sh          # Desktop customization
+│   └── vpn.sh              # VPN installation
 ├── startup/
 │   ├── startup-office.sh   # Startup apps launcher
 │   └── plank-start.sh      # Start Plank dock with X11 backend
 ├── docker/
 │   └── docker-cleanup.sh   # Docker cleanup utility
+├── vpn/
+│   ├── vpn-connect.sh      # VPN connection wrapper
+│   └── providers/          # Pluggable VPN providers
+│       ├── _template.sh    # Template for new providers
+│       ├── mullvad.sh
+│       ├── nordvpn.sh
+│       └── protonvpn.sh
 └── README.md
 ```
 
@@ -204,6 +214,70 @@ The SSH module (`./install.sh -m ssh`) provides:
 After running, add your public key to:
 - GitHub: https://github.com/settings/ssh/new
 - GitLab: https://gitlab.com/-/profile/keys
+
+## VPN Module
+
+The VPN module (`./install.sh -m vpn`) supports multiple providers:
+
+| Provider | Installation | Authentication |
+|----------|--------------|----------------|
+| Mullvad | Official repo + apt | Account number |
+| NordVPN | Official install script | Browser login |
+| ProtonVPN | Official repo + apt | CLI login |
+
+### Configuration
+
+Set your preferred provider in `config.yaml`:
+
+```yaml
+vpn:
+  provider: mullvad          # mullvad, nordvpn, or protonvpn
+  default_country: de        # Default connection country
+  account_number: ""         # Mullvad account (optional)
+```
+
+### VPN Connection Script
+
+After installation, use `vpn/vpn-connect.sh` to manage connections:
+
+```bash
+./vpn/vpn-connect.sh connect         # Connect to default country
+./vpn/vpn-connect.sh connect us      # Connect to US
+./vpn/vpn-connect.sh disconnect      # Disconnect
+./vpn/vpn-connect.sh status          # Show status
+./vpn/vpn-connect.sh is-connected    # Check connection (for scripts)
+./vpn/vpn-connect.sh list-providers  # List available providers
+```
+
+### Adding a New VPN Provider
+
+The VPN module uses a pluggable provider architecture. To add a new provider:
+
+1. Copy the template:
+   ```bash
+   cp vpn/providers/_template.sh vpn/providers/myvpn.sh
+   ```
+
+2. Implement the required functions in `myvpn.sh`:
+   ```bash
+   provider_install()        # Install the VPN client
+   provider_configure()      # Post-install setup instructions
+   provider_connect()        # Connect to VPN
+   provider_disconnect()     # Disconnect from VPN
+   provider_status()         # Print status
+   provider_is_connected()   # Return 0 if connected
+   ```
+
+3. Use your new provider:
+   ```bash
+   # Via environment variable
+   VPN_PROVIDER=myvpn ./vpn/vpn-connect.sh connect
+
+   # Or edit vpn-connect.sh to change the default
+   VPN_PROVIDER="${VPN_PROVIDER:-myvpn}"
+   ```
+
+See `vpn/providers/_template.sh` for a complete example with documentation.
 
 ## Utility Scripts
 
@@ -252,6 +326,7 @@ For convenience, add aliases to your `~/.zshrc` or `~/.bashrc`:
 # Custom script aliases
 alias plank-start='$HOME/scripts/startup/plank-start.sh'
 alias docker-cleanup='$HOME/scripts/docker/docker-cleanup.sh'
+alias vpn='$HOME/scripts/vpn/vpn-connect.sh'
 ```
 
 After adding, reload your shell:
@@ -266,6 +341,7 @@ source ~/.zshrc  # or source ~/.bashrc
 |-------|--------|-------------|
 | `plank-start` | `startup/plank-start.sh` | Start Plank dock with X11 backend |
 | `docker-cleanup` | `docker/docker-cleanup.sh` | Fix port conflicts from orphaned docker-proxy |
+| `vpn` | `vpn/vpn-connect.sh` | VPN connection manager |
 
 ## Requirements
 
