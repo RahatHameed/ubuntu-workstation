@@ -16,4 +16,4 @@ GDK_BACKEND=x11 plank &
 gnome-terminal &
 
 # Run Docker cleanup in background after Docker Desktop has time to start
-(sleep 15 && "$SCRIPT_DIR/docker-cleanup.sh") &
+(sleep 15 && "$SCRIPT_DIR/../docker/docker-cleanup.sh") &

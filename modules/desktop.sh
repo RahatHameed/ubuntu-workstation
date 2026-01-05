@@ -62,7 +62,7 @@ configure_startup_apps() {
     run mkdir -p "$HOME/.config/autostart"
 
     # Add startup-office.sh to autostart
-    local startup_script="$SCRIPT_DIR/../startup-office.sh"
+    local startup_script="$SCRIPT_DIR/../startup/startup-office.sh"
 
     if [[ -f "$startup_script" ]]; then
         if [[ "$DRY_RUN" == true ]]; then
