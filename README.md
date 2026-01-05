@@ -167,8 +167,11 @@ ubuntu-setup-scripts/
 │   ├── apps.sh             # Work applications
 │   ├── docker.sh           # Docker setup
 │   └── desktop.sh          # Desktop customization
-├── startup-office.sh       # Startup apps launcher
-├── docker-cleanup.sh       # Docker cleanup utility
+├── startup/
+│   ├── startup-office.sh   # Startup apps launcher
+│   └── plank-start.sh      # Start Plank dock with X11 backend
+├── docker/
+│   └── docker-cleanup.sh   # Docker cleanup utility
 └── README.md
 ```
 
@@ -204,7 +207,7 @@ After running, add your public key to:
 
 ## Utility Scripts
 
-### startup-office.sh
+### startup/startup-office.sh
 
 Launches work applications on login:
 - PhpStorm, Slack, Chrome, Plank, Docker Desktop, Terminal
@@ -217,7 +220,7 @@ mkdir -p ~/.config/autostart
 cat > ~/.config/autostart/startup-office.desktop << EOF
 [Desktop Entry]
 Type=Application
-Exec=$HOME/ubuntu-workstation/startup-office.sh
+Exec=$HOME/scripts/startup/startup-office.sh
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
@@ -225,13 +228,44 @@ Name=Work Apps
 EOF
 ```
 
-### docker-cleanup.sh
+### startup/plank-start.sh
+
+Start Plank dock with X11 backend (fixes Wayland compatibility):
+
+```bash
+./startup/plank-start.sh
+```
+
+### docker/docker-cleanup.sh
 
 Fixes "port already in use" errors after restart:
 
 ```bash
-./docker-cleanup.sh
+./docker/docker-cleanup.sh
 ```
+
+## Shell Aliases
+
+For convenience, add aliases to your `~/.zshrc` or `~/.bashrc`:
+
+```bash
+# Custom script aliases
+alias plank-start='$HOME/scripts/startup/plank-start.sh'
+alias docker-cleanup='$HOME/scripts/docker/docker-cleanup.sh'
+```
+
+After adding, reload your shell:
+
+```bash
+source ~/.zshrc  # or source ~/.bashrc
+```
+
+### Available Aliases
+
+| Alias | Script | Description |
+|-------|--------|-------------|
+| `plank-start` | `startup/plank-start.sh` | Start Plank dock with X11 backend |
+| `docker-cleanup` | `docker/docker-cleanup.sh` | Fix port conflicts from orphaned docker-proxy |
 
 ## Requirements
 
@@ -267,7 +301,7 @@ Then add to the `install_apps()` function.
 
 ### Modify startup apps
 
-Edit `startup-office.sh` to add/remove applications.
+Edit `startup/startup-office.sh` to add/remove applications.
 
 ## License
 
