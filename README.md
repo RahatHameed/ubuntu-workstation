@@ -241,10 +241,13 @@ Fixes "port already in use" errors after restart:
 
 ## Post-Installation
 
-1. **Log out and back in** for shell and Docker group changes
-2. **Configure Plank dock** - `Ctrl + right-click` on dock
-3. **Apply theme** in GNOME Tweaks (if WhiteSur installed)
-4. **Configure PhpStorm terminal** - Set shell path to `/usr/bin/zsh`
+1. **Log out and select "Ubuntu on Xorg"** from the gear icon on login screen (required for Plank)
+2. **Log back in** for shell and Docker group changes to take effect
+3. **Configure Plank dock** - `Ctrl + right-click` on dock
+4. **Apply theme** in GNOME Tweaks (if WhiteSur installed)
+5. **Configure PhpStorm terminal** - Set shell path to `/usr/bin/zsh`
+
+> **Important:** Plank dock does not work on Wayland. You must use Xorg session.
 
 ## Customization
 
