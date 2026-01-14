@@ -57,10 +57,14 @@ startup_apps:
 # ============================================
 vpn:
   # Provider: mullvad, nordvpn, protonvpn
-  provider: mullvad
+  provider: nordvpn
 
-  # Default country code for VPN connection
-  default_country: de
+  # Default country for VPN connection
+  default_country: Germany
+
+  # Default city (optional, for consistent IP location)
+  # NordVPN: Frankfurt, Berlin, Hamburg
+  default_city: Frankfurt
 
   # Auto-connect on startup
   auto_connect: false

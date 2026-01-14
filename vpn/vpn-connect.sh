@@ -38,11 +38,13 @@ parse_yaml_value() {
 # ============================================
 
 load_config() {
-    local config_provider=$(parse_yaml_value "$CONFIG_FILE" "vpn" "provider" "mullvad")
+    local config_provider=$(parse_yaml_value "$CONFIG_FILE" "vpn" "provider" "nordvpn")
     local config_country=$(parse_yaml_value "$CONFIG_FILE" "vpn" "default_country" "de")
+    local config_city=$(parse_yaml_value "$CONFIG_FILE" "vpn" "default_city" "")
 
     VPN_PROVIDER="${VPN_PROVIDER:-$config_provider}"
     DEFAULT_COUNTRY="${DEFAULT_COUNTRY:-$config_country}"
+    DEFAULT_CITY="${DEFAULT_CITY:-$config_city}"
 }
 
 load_config
@@ -104,23 +106,25 @@ VPN Connection Manager
 Usage: $(basename "$0") <command> [options]
 
 Commands:
-  connect [country]   Connect to VPN (default: $DEFAULT_COUNTRY)
-  disconnect          Disconnect from VPN
-  status              Show connection status
-  is-connected        Exit 0 if connected, 1 if not
-  list-providers      List available VPN providers
+  connect [country] [city]   Connect to VPN (default: $DEFAULT_COUNTRY $DEFAULT_CITY)
+  disconnect                 Disconnect from VPN
+  status                     Show connection status
+  is-connected               Exit 0 if connected, 1 if not
+  list-providers             List available VPN providers
 
 Configuration (from config.yaml):
   VPN_PROVIDER=$VPN_PROVIDER
   DEFAULT_COUNTRY=$DEFAULT_COUNTRY
+  DEFAULT_CITY=$DEFAULT_CITY
 
 To change settings, edit config.yaml:
   vpn:
-    provider: mullvad
-    default_country: de
+    provider: nordvpn
+    default_country: Germany
+    default_city: Frankfurt
 
 Or override via environment:
-  VPN_PROVIDER=nordvpn ./vpn-connect.sh connect
+  VPN_PROVIDER=nordvpn DEFAULT_CITY=Frankfurt ./vpn-connect.sh connect
 
 Adding new providers:
   cp $PROVIDERS_DIR/_template.sh $PROVIDERS_DIR/myvpn.sh
@@ -150,7 +154,8 @@ main() {
     case "$command" in
         connect)
             local country="${2:-$DEFAULT_COUNTRY}"
-            provider_connect "$country"
+            local city="${3:-$DEFAULT_CITY}"
+            provider_connect "$country" "$city"
             vpn_wait_connected
             ;;
         disconnect)

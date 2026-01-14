@@ -42,7 +42,12 @@ provider_configure() {
 
 provider_connect() {
     local country="${1:-}"
-    if [[ -n "$country" ]]; then
+    local city="${2:-}"
+
+    if [[ -n "$country" && -n "$city" ]]; then
+        # Connect to specific city (e.g., "Germany Frankfurt")
+        nordvpn connect "$country" "$city"
+    elif [[ -n "$country" ]]; then
         nordvpn connect "$country"
     else
         nordvpn connect
