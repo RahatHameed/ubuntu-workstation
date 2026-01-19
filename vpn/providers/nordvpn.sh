@@ -10,6 +10,22 @@ provider_check_installed() {
 }
 
 # ============================================
+# IPv6 Leak Protection
+# ============================================
+
+disable_ipv6() {
+    echo "Disabling IPv6 to prevent leaks..."
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 >/dev/null 2>&1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1 >/dev/null 2>&1
+}
+
+enable_ipv6() {
+    echo "Re-enabling IPv6..."
+    sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1
+    sudo sysctl -w net.ipv6.conf.default.disable_ipv6=0 >/dev/null 2>&1
+}
+
+# ============================================
 # Installation
 # ============================================
 
@@ -44,6 +60,9 @@ provider_connect() {
     local country="${1:-}"
     local city="${2:-}"
 
+    # Block IPv6 before connecting to prevent leaks
+    disable_ipv6
+
     if [[ -n "$country" && -n "$city" ]]; then
         # Connect to specific city (e.g., "Germany Frankfurt")
         nordvpn connect "$country" "$city"
@@ -56,6 +75,8 @@ provider_connect() {
 
 provider_disconnect() {
     nordvpn disconnect
+    # Re-enable IPv6 after disconnecting
+    enable_ipv6
 }
 
 provider_status() {
