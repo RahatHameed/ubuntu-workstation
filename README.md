@@ -241,13 +241,23 @@ vpn:
 After installation, use `vpn/vpn-connect.sh` to manage connections:
 
 ```bash
-./vpn/vpn-connect.sh connect         # Connect to default country
-./vpn/vpn-connect.sh connect us      # Connect to US
-./vpn/vpn-connect.sh disconnect      # Disconnect
-./vpn/vpn-connect.sh status          # Show status
-./vpn/vpn-connect.sh is-connected    # Check connection (for scripts)
-./vpn/vpn-connect.sh list-providers  # List available providers
+./vpn/vpn-connect.sh connect              # Connect to default country
+./vpn/vpn-connect.sh connect Germany      # Connect to Germany
+./vpn/vpn-connect.sh connect Germany Frankfurt  # Connect to specific city
+./vpn/vpn-connect.sh disconnect           # Disconnect
+./vpn/vpn-connect.sh status               # Show status
+./vpn/vpn-connect.sh is-connected         # Check connection (for scripts)
+./vpn/vpn-connect.sh list-providers       # List available providers
 ```
+
+### IPv6 Leak Protection (NordVPN)
+
+The NordVPN provider includes automatic IPv6 leak protection:
+
+- **On connect:** Disables IPv6 system-wide to prevent your real IP leaking
+- **On disconnect:** Re-enables IPv6
+
+This prevents services from detecting your real location via IPv6 while connected to VPN.
 
 ### Adding a New VPN Provider
 
