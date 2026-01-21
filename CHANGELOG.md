@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ## 2026-01-21
 
 ### Added
+- `teams-for-linux` to startup script (replaces broken Teams PWA)
 - `vpn/ipv6-disable.sh` - Standalone IPv6 leak protection script with config support
 - `ipv6_disable` config option in `config.yaml` (disabled by default for safety)
 - `ipv6` shell alias for quick enable/disable/status commands

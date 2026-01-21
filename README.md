@@ -327,7 +327,7 @@ See `vpn/providers/_template.sh` for a complete example with documentation.
 ### startup/startup-office.sh
 
 Launches work applications on login:
-- PhpStorm, Slack, Chrome, Plank, Docker Desktop, Terminal
+- PhpStorm, Slack, Teams, Chrome, Plank, Docker Desktop, Terminal
 
 **Setup as startup application:**
 

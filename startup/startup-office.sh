@@ -15,6 +15,7 @@ pkill -9 -f docker-proxy 2>/dev/null
 
 phpstorm &
 slack &
+teams-for-linux &
 google-chrome &
 /opt/google/chrome/google-chrome --profile-directory=Default --app-id=faolnafnngnfdaknnbpnkhgohbobgegn &  # Outlook PWA
 GDK_BACKEND=x11 plank &
