@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## 2026-01-21
+
+### Added
+- `vpn/ipv6-disable.sh` - Standalone IPv6 leak protection script with config support
+- `ipv6_disable` config option in `config.yaml` (disabled by default for safety)
+- `ipv6` shell alias for quick enable/disable/status commands
+- Startup script now applies IPv6 config automatically on boot
+
+### Changed
+- IPv6 protection is now config-driven and applies to all VPN providers
+
 ## 2026-01-19
 
 ### Added

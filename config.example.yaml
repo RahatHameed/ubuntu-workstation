@@ -69,6 +69,10 @@ vpn:
   # Auto-connect on startup
   auto_connect: false
 
+  # Disable IPv6 to prevent VPN leaks (recommended: true)
+  # When enabled, IPv6 is disabled system-wide so your real IP won't leak
+  ipv6_disable: true
+
   # Account credentials (provider-specific)
   # Mullvad: account number (16 digits)
   # NordVPN: leave empty (uses browser login)

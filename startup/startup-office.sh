@@ -4,6 +4,9 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Apply IPv6 config (disabled by default to prevent VPN leaks)
+"$SCRIPT_DIR/../vpn/ipv6-disable.sh" || echo "Warning: IPv6 config failed. Continuing anyway..."
+
 # Try to connect VPN (killswitch is enabled for safety)
 "$SCRIPT_DIR/../vpn/vpn-connect.sh" connect || echo "Warning: VPN failed to connect. Continuing anyway..."
 

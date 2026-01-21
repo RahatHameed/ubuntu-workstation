@@ -177,12 +177,28 @@ ubuntu-setup-scripts/
 │   └── docker-cleanup.sh   # Docker cleanup utility
 ├── vpn/
 │   ├── vpn-connect.sh      # VPN connection wrapper
+│   ├── ipv6-disable.sh     # IPv6 leak protection
 │   └── providers/          # Pluggable VPN providers
 │       ├── _template.sh    # Template for new providers
 │       ├── mullvad.sh
 │       ├── nordvpn.sh
 │       └── protonvpn.sh
+├── troubleshooting/        # Issue tracking and solutions
+│   └── teams-calendar-issue.md
 └── README.md
+```
+
+## Troubleshooting Notes
+
+The `troubleshooting/` directory contains documentation for known issues and their solutions:
+
+| File | Issue |
+|------|-------|
+| `teams-calendar-issue.md` | Teams calendar "AccountSourceListStore" error |
+
+View an issue:
+```bash
+cat ~/scripts/troubleshooting/teams-calendar-issue.md
 ```
 
 ## Git Module
@@ -233,6 +249,7 @@ Set your preferred provider in `config.yaml`:
 vpn:
   provider: mullvad          # mullvad, nordvpn, or protonvpn
   default_country: de        # Default connection country
+  ipv6_disable: true         # Disable IPv6 to prevent leaks (recommended)
   account_number: ""         # Mullvad account (optional)
 ```
 
@@ -250,14 +267,30 @@ After installation, use `vpn/vpn-connect.sh` to manage connections:
 ./vpn/vpn-connect.sh list-providers       # List available providers
 ```
 
-### IPv6 Leak Protection (NordVPN)
+### IPv6 Leak Protection
 
-The NordVPN provider includes automatic IPv6 leak protection:
+VPNs often don't route IPv6 traffic, causing your real IP to leak. The `ipv6-disable.sh` script prevents this:
 
-- **On connect:** Disables IPv6 system-wide to prevent your real IP leaking
-- **On disconnect:** Re-enables IPv6
+```bash
+ipv6 disable   # Force disable IPv6
+ipv6 enable    # Force enable IPv6
+ipv6 persist   # Make config persistent (survives reboot)
+ipv6 status    # Check current status and external IPs
+ipv6           # Apply config setting (default: disable)
+```
 
-This prevents services from detecting your real location via IPv6 while connected to VPN.
+**Configuration** (`config.yaml`):
+
+```yaml
+vpn:
+  ipv6_disable: true    # true = disable IPv6 (recommended), false = enable
+```
+
+**Behavior:**
+- **Startup:** Applied automatically by `startup-office.sh` based on config
+- **Changes are temporary** unless you run `ipv6 persist`
+- **Persist:** Creates `/etc/sysctl.d/99-disable-ipv6.conf` for settings to survive reboot
+- **Default:** IPv6 disabled to prevent leaks
 
 ### Adding a New VPN Provider
 
@@ -328,6 +361,18 @@ Fixes "port already in use" errors after restart:
 ./docker/docker-cleanup.sh
 ```
 
+### vpn/ipv6-disable.sh
+
+Disables IPv6 to prevent VPN leaks:
+
+```bash
+./vpn/ipv6-disable.sh           # Apply config (disable if ipv6_disable: true)
+./vpn/ipv6-disable.sh disable   # Force disable IPv6
+./vpn/ipv6-disable.sh enable    # Force enable IPv6
+./vpn/ipv6-disable.sh persist   # Make config persistent (survives reboot)
+./vpn/ipv6-disable.sh status    # Check status and external IPs
+```
+
 ## Shell Aliases
 
 For convenience, add aliases to your `~/.zshrc` or `~/.bashrc`:
@@ -337,6 +382,7 @@ For convenience, add aliases to your `~/.zshrc` or `~/.bashrc`:
 alias plank-start='$HOME/scripts/startup/plank-start.sh'
 alias docker-cleanup='$HOME/scripts/docker/docker-cleanup.sh'
 alias vpn='$HOME/scripts/vpn/vpn-connect.sh'
+alias ipv6='$HOME/scripts/vpn/ipv6-disable.sh'
 ```
 
 After adding, reload your shell:
@@ -352,6 +398,7 @@ source ~/.zshrc  # or source ~/.bashrc
 | `plank-start` | `startup/plank-start.sh` | Start Plank dock with X11 backend |
 | `docker-cleanup` | `docker/docker-cleanup.sh` | Fix port conflicts from orphaned docker-proxy |
 | `vpn` | `vpn/vpn-connect.sh` | VPN connection manager |
+| `ipv6` | `vpn/ipv6-disable.sh` | IPv6 leak protection (disable/enable/status) |
 
 ## Requirements
 
