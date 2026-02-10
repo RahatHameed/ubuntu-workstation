@@ -183,6 +183,8 @@ ubuntu-setup-scripts/
 │       ├── mullvad.sh
 │       ├── nordvpn.sh
 │       └── protonvpn.sh
+├── utils/
+│   └── pdf-sign.sh         # PDF signing with Xournal++
 ├── troubleshooting/        # Issue tracking and solutions
 │   └── teams-calendar-issue.md
 └── README.md
@@ -373,6 +375,23 @@ Disables IPv6 to prevent VPN leaks:
 ./vpn/ipv6-disable.sh status    # Check status and external IPs
 ```
 
+### utils/pdf-sign.sh
+
+Opens PDF in Xournal++ for signing and annotation:
+
+```bash
+./utils/pdf-sign.sh document.pdf    # Open specific PDF
+./utils/pdf-sign.sh                 # Opens file picker (if zenity installed)
+```
+
+**Requires:** `sudo apt install xournalpp`
+
+**Tips for signing:**
+- Text tool (T): Add date/text
+- Pen tool: Draw signature
+- Image tool: Insert signature image
+- File > Export as PDF to save signed version
+
 ## Shell Aliases
 
 For convenience, add aliases to your `~/.zshrc` or `~/.bashrc`:
@@ -383,6 +402,7 @@ alias plank-start='$HOME/scripts/startup/plank-start.sh'
 alias docker-cleanup='$HOME/scripts/docker/docker-cleanup.sh'
 alias vpn='$HOME/scripts/vpn/vpn-connect.sh'
 alias ipv6='$HOME/scripts/vpn/ipv6-disable.sh'
+alias pdf-sign='$HOME/scripts/utils/pdf-sign.sh'
 ```
 
 After adding, reload your shell:
@@ -399,6 +419,7 @@ source ~/.zshrc  # or source ~/.bashrc
 | `docker-cleanup` | `docker/docker-cleanup.sh` | Fix port conflicts from orphaned docker-proxy |
 | `vpn` | `vpn/vpn-connect.sh` | VPN connection manager |
 | `ipv6` | `vpn/ipv6-disable.sh` | IPv6 leak protection (disable/enable/status) |
+| `pdf-sign` | `utils/pdf-sign.sh` | Open PDF in Xournal++ for signing |
 
 ## Requirements
 

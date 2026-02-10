@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## 2026-02-10
+
+### Added
+- `utils/pdf-sign.sh` - PDF signing helper using Xournal++
+- `pdf-sign` shell alias
+
 ## 2026-01-21
 
 ### Added
