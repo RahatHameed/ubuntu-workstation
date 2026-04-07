@@ -7,8 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Apply IPv6 config (disabled by default to prevent VPN leaks)
 "$SCRIPT_DIR/../vpn/ipv6-disable.sh" || echo "Warning: IPv6 config failed. Continuing anyway..."
 
-# Try to connect VPN (killswitch is enabled for safety)
-"$SCRIPT_DIR/../vpn/vpn-connect.sh" connect || echo "Warning: VPN failed to connect. Continuing anyway..."
+# Try to connect VPN if auto_connect=true in config
+"$SCRIPT_DIR/../vpn/vpn-connect.sh" auto-connect || echo "Warning: VPN auto-connect failed. Continuing anyway..."
 
 # Kill orphaned docker-proxy processes BEFORE starting Docker Desktop
 pkill -9 -f docker-proxy 2>/dev/null

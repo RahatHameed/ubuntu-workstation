@@ -41,10 +41,12 @@ load_config() {
     local config_provider=$(parse_yaml_value "$CONFIG_FILE" "vpn" "provider" "nordvpn")
     local config_country=$(parse_yaml_value "$CONFIG_FILE" "vpn" "default_country" "de")
     local config_city=$(parse_yaml_value "$CONFIG_FILE" "vpn" "default_city" "")
+    local config_auto_connect=$(parse_yaml_value "$CONFIG_FILE" "vpn" "auto_connect" "false")
 
     VPN_PROVIDER="${VPN_PROVIDER:-$config_provider}"
     DEFAULT_COUNTRY="${DEFAULT_COUNTRY:-$config_country}"
     DEFAULT_CITY="${DEFAULT_CITY:-$config_city}"
+    AUTO_CONNECT="${AUTO_CONNECT:-$config_auto_connect}"
 }
 
 load_config
@@ -107,6 +109,7 @@ Usage: $(basename "$0") <command> [options]
 
 Commands:
   connect [country] [city]   Connect to VPN (default: $DEFAULT_COUNTRY $DEFAULT_CITY)
+  auto-connect               Connect only if auto_connect=true in config
   disconnect                 Disconnect from VPN
   status                     Show connection status
   is-connected               Exit 0 if connected, 1 if not
@@ -153,6 +156,16 @@ main() {
 
     case "$command" in
         connect)
+            local country="${2:-$DEFAULT_COUNTRY}"
+            local city="${3:-$DEFAULT_CITY}"
+            provider_connect "$country" "$city"
+            vpn_wait_connected
+            ;;
+        auto-connect)
+            if [[ "$AUTO_CONNECT" != "true" ]]; then
+                echo "VPN auto-connect disabled in config"
+                exit 0
+            fi
             local country="${2:-$DEFAULT_COUNTRY}"
             local city="${3:-$DEFAULT_CITY}"
             provider_connect "$country" "$city"
