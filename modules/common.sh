@@ -32,11 +32,23 @@ run() {
     fi
 }
 
-# Check if running on Ubuntu
+# Check if running on Ubuntu or an Ubuntu derivative (Pop!_OS, Mint, ...)
 check_ubuntu() {
-    if ! grep -q "Ubuntu" /etc/os-release 2>/dev/null; then
+    if [[ ! -f /etc/os-release ]]; then
         print_error "This script is designed for Ubuntu. Exiting."
         exit 1
+    fi
+
+    local ID="" ID_LIKE=""
+    source /etc/os-release
+
+    if [[ "$ID" != "ubuntu" && " $ID_LIKE " != *" ubuntu "* ]]; then
+        print_error "This script is designed for Ubuntu. Exiting."
+        exit 1
+    fi
+
+    if [[ "$ID" != "ubuntu" ]]; then
+        print_warning "Detected ${PRETTY_NAME:-$ID} (Ubuntu-based) - proceeding"
     fi
 }
 
