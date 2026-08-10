@@ -138,7 +138,14 @@ parse_config_list() {
     local section="$2"
 
     if [[ -f "$config_file" ]]; then
-        awk "/^${section}:$/,/^[a-z]/" "$config_file" | grep "^  - " | sed 's/^  - //' | tr '\n' ' '
+        # A `/start/,/end/` range would collapse to the header alone: awk tests the
+        # end pattern on the same record, and "apps:" matches it too. Track the
+        # section manually and stop at the next unindented key instead.
+        awk -v section="$section" '
+            $0 == section ":" { inside = 1; next }
+            inside && /^[^[:space:]#]/ { inside = 0 }
+            inside && /^  - / { sub(/^  - /, ""); print }
+        ' "$config_file" | tr '\n' ' '
     fi
 }
 
