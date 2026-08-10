@@ -35,7 +35,8 @@ cd ubuntu-workstation
 | `ssh` | SSH key generation + agent auto-start |
 | `apps` | Chrome, Slack, Teams, JetBrains Toolbox, etc. |
 | `docker` | Docker Engine + Docker Desktop |
-| `desktop` | Plank dock, GNOME tweaks, fonts |
+| `desktop` | Plank dock, GNOME tweaks, fonts (includes `startup`) |
+| `startup` | Launch work apps on login (autostart entry only) |
 | `vpn` | Mullvad, NordVPN, or ProtonVPN |
 
 ### Available Applications
@@ -87,6 +88,7 @@ Choose what to install step by step:
 ./install.sh -m apps       # Only applications
 ./install.sh -m docker     # Only Docker
 ./install.sh -m desktop    # Only desktop customization
+./install.sh -m startup    # Only the login autostart entry
 ./install.sh -m vpn        # Only VPN setup
 ```
 
@@ -173,6 +175,7 @@ ubuntu-setup-scripts/
 │   ├── apps.sh             # Work applications
 │   ├── docker.sh           # Docker setup
 │   ├── desktop.sh          # Desktop customization
+│   ├── startup.sh          # Login autostart entry
 │   └── vpn.sh              # VPN installation
 ├── startup/
 │   ├── startup-office.sh   # Startup apps launcher
@@ -338,17 +341,21 @@ Launches work applications on login:
 **Setup as startup application:**
 
 ```bash
-# Create autostart entry
-mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/startup-office.desktop << EOF
-[Desktop Entry]
-Type=Application
-Exec=$HOME/scripts/startup/startup-office.sh
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=Work Apps
-EOF
+./install.sh -m startup
+```
+
+This is the `startup` module (`modules/startup.sh`). It only writes
+`~/.config/autostart/startup-office.desktop`, so you can have work apps launch on
+login without the Plank dock, the Xorg session switch, or the GNOME tweaks that
+`-m desktop` also applies. Running `-m desktop` includes it.
+
+The entry takes effect at your next login. It stores an absolute path to
+`startup/startup-office.sh`, so re-run the module if you move the repo.
+
+Remove it with:
+
+```bash
+./uninstall.sh -m startup
 ```
 
 ### startup/plank-start.sh

@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  -h, --help          Show this help message"
             echo "  -m, --module NAME   Uninstall specific module"
-            echo "                      Modules: shell, git, ssh, apps, docker, desktop, vpn"
+            echo "                      Modules: shell, git, ssh, apps, docker, desktop, startup, vpn"
             echo "  --all               Uninstall everything"
             echo "  --dry-run           Show what would be removed"
             echo ""
@@ -234,10 +234,9 @@ uninstall_docker() {
     print_warning "Docker data removed. This cannot be undone!"
 }
 
-uninstall_desktop() {
-    print_section "Uninstalling Desktop Customizations"
+uninstall_startup() {
+    print_section "Uninstalling Startup Applications"
 
-    # Remove startup entry
     if [[ -f "$HOME/.config/autostart/startup-office.desktop" ]]; then
         print_info "Removing startup entry..."
         if [[ "$DRY_RUN" == true ]]; then
@@ -246,7 +245,15 @@ uninstall_desktop() {
             rm -f "$HOME/.config/autostart/startup-office.desktop"
             print_status "Startup entry removed"
         fi
+    else
+        print_status "No startup entry found"
     fi
+}
+
+uninstall_desktop() {
+    print_section "Uninstalling Desktop Customizations"
+
+    uninstall_startup
 
     # Remove Plank autostart
     if [[ -f "$HOME/.config/autostart/plank.desktop" ]]; then
@@ -350,6 +357,7 @@ run_interactive() {
     confirm "Uninstall applications (Chrome, Slack, etc.)?" && uninstall_apps
     confirm "Uninstall Docker?" && uninstall_docker
     confirm "Remove desktop customizations?" && uninstall_desktop
+    confirm "Remove login autostart entry?" && uninstall_startup
     confirm "Uninstall Mullvad VPN?" && uninstall_vpn
 }
 
@@ -364,10 +372,11 @@ run_module() {
         apps) uninstall_apps ;;
         docker) uninstall_docker ;;
         desktop) uninstall_desktop ;;
+        startup) uninstall_startup ;;
         vpn) uninstall_vpn ;;
         *)
             print_error "Unknown module: $MODULE"
-            echo "Available modules: shell, git, ssh, apps, docker, desktop, vpn"
+            echo "Available modules: shell, git, ssh, apps, docker, desktop, startup, vpn"
             exit 1
             ;;
     esac

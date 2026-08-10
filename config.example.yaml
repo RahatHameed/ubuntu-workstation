@@ -11,6 +11,7 @@ modules:
   apps: true         # Work applications
   docker: true       # Docker Engine + Desktop
   desktop: true      # Plank dock, GNOME tweaks
+  startup: true      # Launch work apps on login (autostart entry)
   vpn: true          # VPN client
 
 # ============================================
