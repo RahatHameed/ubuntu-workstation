@@ -18,6 +18,7 @@ modules:
 # Comment out apps you don't need
 # ============================================
 apps:
+  - build-tools
   - chrome
   - slack
   - teams

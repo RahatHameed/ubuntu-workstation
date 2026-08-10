@@ -53,6 +53,7 @@ cd ubuntu-workstation
 
 | App | Installation Method |
 |-----|---------------------|
+| Build tools (make, gcc, g++) | APT (`build-essential`) |
 | VS Code | Snap |
 | Discord | Snap |
 | Zoom | Official .deb |
@@ -125,6 +126,7 @@ modules:
 
 # Apps to install
 apps:
+  - build-tools
   - chrome
   - slack
   - teams

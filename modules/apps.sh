@@ -143,6 +143,11 @@ install_tigervnc() {
     print_warning "Run 'vncserver :1' to start VNC server"
 }
 
+# make, gcc, g++, libc headers - needed to build anything from source
+install_build_tools() {
+    apt_install "build-essential"
+}
+
 # Main function - installs based on config or all by default
 install_apps() {
     local config_file="${1:-}"
@@ -151,6 +156,7 @@ install_apps() {
 
     if [[ -n "$config_file" && -f "$config_file" ]]; then
         # Install only apps specified in config
+        config_has "$config_file" "apps" "build-tools" && install_build_tools
         config_has "$config_file" "apps" "chrome" && install_chrome
         config_has "$config_file" "apps" "slack" && install_slack
         config_has "$config_file" "apps" "teams" && install_teams
@@ -178,6 +184,7 @@ install_apps_interactive() {
 
     local apps=()
 
+    confirm "Install build tools (make, gcc, g++)?" && apps+=("build-tools")
     confirm "Install Google Chrome?" && apps+=("chrome")
     confirm "Install Slack?" && apps+=("slack")
     confirm "Install Microsoft Teams?" && apps+=("teams")
@@ -193,6 +200,7 @@ install_apps_interactive() {
     echo ""
     for app in "${apps[@]}"; do
         case "$app" in
+            build-tools) install_build_tools ;;
             chrome) install_chrome ;;
             slack) install_slack ;;
             teams) install_teams ;;
