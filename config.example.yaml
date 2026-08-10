@@ -19,6 +19,7 @@ modules:
 # ============================================
 apps:
   - build-tools
+  - gh
   - chrome
   - slack
   - teams

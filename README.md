@@ -54,6 +54,7 @@ cd ubuntu-workstation
 | App | Installation Method |
 |-----|---------------------|
 | Build tools (make, gcc, g++) | APT (`build-essential`) |
+| GitHub CLI (`gh`) | APT |
 | VS Code | Snap |
 | Discord | Snap |
 | Zoom | Official .deb |
@@ -127,6 +128,7 @@ modules:
 # Apps to install
 apps:
   - build-tools
+  - gh
   - chrome
   - slack
   - teams

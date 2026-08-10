@@ -148,6 +148,11 @@ install_build_tools() {
     apt_install "build-essential"
 }
 
+install_gh() {
+    apt_install "gh"
+    print_warning "Run 'gh auth login' to authenticate (also wires up git credentials)"
+}
+
 # Main function - installs based on config or all by default
 install_apps() {
     local config_file="${1:-}"
@@ -157,6 +162,7 @@ install_apps() {
     if [[ -n "$config_file" && -f "$config_file" ]]; then
         # Install only apps specified in config
         config_has "$config_file" "apps" "build-tools" && install_build_tools
+        config_has "$config_file" "apps" "gh" && install_gh
         config_has "$config_file" "apps" "chrome" && install_chrome
         config_has "$config_file" "apps" "slack" && install_slack
         config_has "$config_file" "apps" "teams" && install_teams
@@ -185,6 +191,7 @@ install_apps_interactive() {
     local apps=()
 
     confirm "Install build tools (make, gcc, g++)?" && apps+=("build-tools")
+    confirm "Install GitHub CLI (gh)?" && apps+=("gh")
     confirm "Install Google Chrome?" && apps+=("chrome")
     confirm "Install Slack?" && apps+=("slack")
     confirm "Install Microsoft Teams?" && apps+=("teams")
@@ -201,6 +208,7 @@ install_apps_interactive() {
     for app in "${apps[@]}"; do
         case "$app" in
             build-tools) install_build_tools ;;
+            gh) install_gh ;;
             chrome) install_chrome ;;
             slack) install_slack ;;
             teams) install_teams ;;
