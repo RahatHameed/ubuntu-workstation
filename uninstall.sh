@@ -185,6 +185,7 @@ uninstall_apps() {
             print_info "[DRY-RUN] Would remove JetBrains Toolbox"
         else
             rm -rf "$HOME/.local/share/JetBrains"
+            rm -rf "$HOME/.local/opt/jetbrains-toolbox"
             rm -f "$HOME/.local/bin/jetbrains-toolbox"
             rm -f "$HOME/.local/share/applications/jetbrains-toolbox.desktop"
             print_status "JetBrains Toolbox removed"
