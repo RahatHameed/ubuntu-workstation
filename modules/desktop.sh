@@ -4,6 +4,10 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
+# Startup apps are their own module; desktop pulls it in so a full desktop
+# install still ends up with the autostart entry.
+source "$SCRIPT_DIR/startup.sh"
+
 install_gnome_tools() {
     print_info "Installing GNOME tools..."
     apt_install gnome-tweaks
@@ -54,35 +58,6 @@ configure_gnome() {
     # Font scaling
     run gsettings set org.gnome.desktop.interface text-scaling-factor 1.25
     print_status "Font scaling set to 1.25"
-}
-
-configure_startup_apps() {
-    print_info "Configuring startup applications..."
-
-    run mkdir -p "$HOME/.config/autostart"
-
-    # Add startup-office.sh to autostart
-    local startup_script="$SCRIPT_DIR/../startup/startup-office.sh"
-
-    if [[ -f "$startup_script" ]]; then
-        if [[ "$DRY_RUN" == true ]]; then
-            print_info "[DRY-RUN] Would create autostart entry for startup-office.sh"
-        else
-            cat > "$HOME/.config/autostart/startup-office.desktop" << EOF
-[Desktop Entry]
-Type=Application
-Exec=$startup_script
-Hidden=false
-NoDisplay=false
-X-GNOME-Autostart-enabled=true
-Name=Work Apps
-Comment=Launch work applications on startup
-EOF
-        fi
-        print_status "Startup applications configured"
-    else
-        print_warning "startup-office.sh not found, skipping autostart setup"
-    fi
 }
 
 set_xorg_session() {
@@ -149,7 +124,7 @@ install_desktop() {
     install_plank
     set_xorg_session
     configure_gnome
-    configure_startup_apps
+    install_startup
 
     if [[ "$install_theme" == "true" ]]; then
         install_whitesur_theme

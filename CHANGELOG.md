@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `startup` module (`modules/startup.sh`) - installs the login autostart entry on
+  its own via `./install.sh -m startup`, no longer requiring the full `desktop`
+  module (Plank, Xorg session switch, GNOME tweaks)
+- `./uninstall.sh -m startup` to remove the autostart entry
+
+### Changed
+- `desktop` module now delegates autostart setup to the `startup` module instead
+  of writing the entry itself
+
 ## 2026-02-10
 
 ### Added
