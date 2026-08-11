@@ -166,7 +166,9 @@ Sunrise and sunset are computed locally from your latitude and longitude — no
 network, no location service. Coordinates default to those of the system
 timezone, taken from tzdata, which is accurate to the zone's reference city.
 Set `darkmode_latitude` and `darkmode_longitude` in the config if that is far
-from you: sunset in Freiburg differs from Berlin by roughly 20 minutes.
+from you. The difference is not negligible: on the same August day, Frankfurt am
+Main (50.11, 8.68) sees sunrise at 06:08 and sunset at 20:53, against Berlin's
+05:41 and 20:42 — 27 minutes apart in the morning.
 
 The timer polls every 15 minutes rather than scheduling the exact transition,
 which keeps it correct across suspend, resume, travel and clock changes without

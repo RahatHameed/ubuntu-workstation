@@ -89,7 +89,10 @@ EOF
     run systemctl --user enable --now dark-at-sunset.timer
 
     print_status "Dark mode will follow the sun"
-    "$BIN_DIR/dark-at-sunset" status | sed 's/^/    /'
+    # Pass the same arguments the unit uses, or this reports the timezone's
+    # default coordinates and quietly contradicts what was just installed.
+    # shellcheck disable=SC2086
+    "$BIN_DIR/dark-at-sunset" status $args | sed 's/^/    /'
     print_info "Force it either way with: dark-at-sunset dark|light"
     print_info "Disable with: systemctl --user disable --now dark-at-sunset.timer"
 }
