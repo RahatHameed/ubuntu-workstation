@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+"""Switch the GNOME colour scheme to dark at sunset and back at sunrise.
+
+GNOME has no built-in day/night theme switching -- Night Light is a different
+thing, it only warms the screen's colour temperature. This fills that gap with a
+systemd user timer rather than a shell extension, so it needs no logout to take
+effect and survives GNOME upgrades.
+
+Coordinates default to those of the system timezone, from tzdata's zone.tab.
+That is accurate to the zone's reference city, which is within a few minutes of
+sunset for anywhere in the same country; override with --lat/--lon if you care.
+
+Standard library only.
+"""
+from __future__ import annotations
+
+import argparse
+import math
+import subprocess
+import sys
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+SCHEMA = "org.gnome.desktop.interface"
+KEY = "color-scheme"
+DARK = "prefer-dark"
+LIGHT = "default"
+
+ZONE_TAB = "/usr/share/zoneinfo/zone.tab"
+
+
+def current_timezone() -> str:
+    out = subprocess.run(["timedatectl", "show", "-p", "Timezone", "--value"],
+                         capture_output=True, text=True)
+    return out.stdout.strip() or "UTC"
+
+
+def _dms(text: str, deg_digits: int) -> float:
+    """Parse zone.tab's ISO 6709 form, e.g. +5230 or +01322, into degrees."""
+    sign = -1.0 if text[0] == "-" else 1.0
+    body = text[1:]
+    deg = float(body[:deg_digits])
+    minutes = float(body[deg_digits:deg_digits + 2] or 0)
+    seconds = float(body[deg_digits + 2:deg_digits + 4] or 0)
+    return sign * (deg + minutes / 60 + seconds / 3600)
+
+
+def coords_for(tz: str) -> tuple[float, float] | None:
+    try:
+        with open(ZONE_TAB, encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("#"):
+                    continue
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) >= 3 and parts[2] == tz:
+                    c = parts[1]
+                    # Latitude is +DDMM or +DDMMSS; longitude +DDDMM or +DDDMMSS.
+                    split = 5 if len(c) in (11, 15) else 5
+                    return _dms(c[:split], 2), _dms(c[split:], 3)
+    except OSError:
+        pass
+    return None
+
+
+def sun_times(day: date, lat: float, lon: float) -> tuple[datetime, datetime] | str:
+    """Sunrise and sunset in UTC, or a string when the sun does not do both.
+
+    NOAA's approximation. Accurate to about a minute, which is far finer than
+    anyone notices in a theme switch.
+    """
+    n = day.timetuple().tm_yday
+    gamma = 2 * math.pi / 365 * (n - 1 + 0.5)
+    eqtime = 229.18 * (0.000075 + 0.001868 * math.cos(gamma)
+                       - 0.032077 * math.sin(gamma)
+                       - 0.014615 * math.cos(2 * gamma)
+                       - 0.040849 * math.sin(2 * gamma))
+    decl = (0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma)
+            - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma)
+            - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma))
+
+    lat_r = math.radians(lat)
+    # 90.833 deg accounts for refraction and the sun's disc.
+    cos_ha = (math.cos(math.radians(90.833)) / (math.cos(lat_r) * math.cos(decl))
+              - math.tan(lat_r) * math.tan(decl))
+    if cos_ha > 1:
+        return "polar night"
+    if cos_ha < -1:
+        return "midnight sun"
+    ha = math.degrees(math.acos(cos_ha))
+
+    midnight = datetime(day.year, day.month, day.day, tzinfo=timezone.utc)
+    rise = midnight + timedelta(minutes=720 - 4 * (lon + ha) - eqtime)
+    set_ = midnight + timedelta(minutes=720 - 4 * (lon - ha) - eqtime)
+    return rise, set_
+
+
+def wanted_scheme(now: datetime, lat: float, lon: float) -> tuple[str, str]:
+    times = sun_times(now.date(), lat, lon)
+    if isinstance(times, str):
+        # Above the Arctic circle the sensible fallback is dark in winter.
+        return (DARK if times == "polar night" else LIGHT), times
+    rise, set_ = times
+    if rise <= now < set_:
+        return LIGHT, f"sunrise {rise.astimezone():%H:%M}, sunset {set_.astimezone():%H:%M}"
+    return DARK, f"sunrise {rise.astimezone():%H:%M}, sunset {set_.astimezone():%H:%M}"
+
+
+def get_scheme() -> str:
+    out = subprocess.run(["gsettings", "get", SCHEMA, KEY],
+                         capture_output=True, text=True)
+    return out.stdout.strip().strip("'")
+
+
+def set_scheme(value: str) -> bool:
+    return subprocess.run(["gsettings", "set", SCHEMA, KEY, value]).returncode == 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("command", nargs="?", default="apply",
+                    choices=["apply", "status", "dark", "light"],
+                    help="apply (default), status, or force dark/light once")
+    ap.add_argument("--lat", type=float, help="latitude, north positive")
+    ap.add_argument("--lon", type=float, help="longitude, east positive")
+    args = ap.parse_args()
+
+    tz = current_timezone()
+    lat, lon = args.lat, args.lon
+    if lat is None or lon is None:
+        found = coords_for(tz)
+        if not found:
+            print(f"dark-at-sunset: no coordinates for {tz}; pass --lat/--lon",
+                  file=sys.stderr)
+            return 1
+        lat, lon = found
+
+    now = datetime.now(ZoneInfo(tz)).astimezone(timezone.utc)
+    want, why = wanted_scheme(now, lat, lon)
+
+    if args.command == "dark":
+        want, why = DARK, "forced"
+    elif args.command == "light":
+        want, why = LIGHT, "forced"
+
+    have = get_scheme()
+    if args.command == "status":
+        print(f"timezone : {tz}  ({lat:.2f}, {lon:.2f})")
+        print(f"today    : {why}")
+        print(f"scheme   : {have}   wanted: {want}")
+        return 0
+
+    if have == want:
+        print(f"dark-at-sunset: already {want} ({why})")
+        return 0
+    if not set_scheme(want):
+        print("dark-at-sunset: gsettings failed", file=sys.stderr)
+        return 1
+    print(f"dark-at-sunset: {have} -> {want} ({why})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
