@@ -12,6 +12,7 @@ modules:
   docker: true       # Docker Engine + Desktop
   desktop: true      # Plank dock, GNOME tweaks
   startup: true      # Launch work apps on login (autostart entry)
+  darkmode: true     # Dark GNOME colour scheme at sunset, light at sunrise
   vpn: true          # VPN client
 
 # ============================================
@@ -42,6 +43,12 @@ install_theme: false
 
 # Font scaling factor (1.0 = normal, 1.25 = larger)
 font_scale: 1.25
+
+# Coordinates used to work out sunrise and sunset for the darkmode module.
+# Leave empty to use the system timezone's reference city, which is accurate to
+# a few minutes anywhere in the same country.
+darkmode_latitude: ""
+darkmode_longitude: ""
 
 # ============================================
 # Startup applications

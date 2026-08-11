@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             echo "  -i, --interactive   Interactive mode (prompts for each option)"
             echo "  -c, --config FILE   Use custom config file"
             echo "  -m, --module NAME   Install specific module only"
-            echo "                      Modules: shell, git, ssh, apps, docker, desktop, startup, vpn, all"
+            echo "                      Modules: shell, git, ssh, apps, docker, desktop, startup, darkmode, vpn, all"
             echo "  --dry-run           Show what would be installed"
             echo "  --claude            Include Claude CLI installation"
             echo ""
@@ -133,6 +133,7 @@ run_interactive() {
     confirm "Install Docker?" && modules+=("docker")
     confirm "Install desktop customizations (Plank, fonts)?" && modules+=("desktop")
     confirm "Launch work apps on login (autostart entry)?" && modules+=("startup")
+    confirm "Switch to dark mode at sunset?" && modules+=("darkmode")
     confirm "Install Mullvad VPN?" && modules+=("vpn")
 
     echo ""
@@ -146,6 +147,7 @@ run_interactive() {
             docker) source "$ROOT_DIR/modules/docker.sh" && install_docker ;;
             desktop) source "$ROOT_DIR/modules/desktop.sh" && install_desktop ;;
             startup) source "$ROOT_DIR/modules/startup.sh" && install_startup ;;
+            darkmode) source "$ROOT_DIR/modules/darkmode.sh" && install_darkmode "$CONFIG_FILE" ;;
             vpn) source "$ROOT_DIR/modules/vpn.sh" && install_vpn ;;
         esac
     done
@@ -190,16 +192,23 @@ run_module() {
             source "$ROOT_DIR/modules/startup.sh"
             install_startup
             ;;
+        darkmode)
+            source "$ROOT_DIR/modules/darkmode.sh"
+            install_darkmode "$CONFIG_FILE"
+            ;;
         vpn)
             source "$ROOT_DIR/modules/vpn.sh"
             install_vpn
+
+    source "$ROOT_DIR/modules/darkmode.sh"
+    install_darkmode "$CONFIG_FILE"
             ;;
         all)
             run_all
             ;;
         *)
             print_error "Unknown module: $module"
-            echo "Available modules: shell, git, ssh, apps, docker, desktop, startup, vpn, all"
+            echo "Available modules: shell, git, ssh, apps, docker, desktop, startup, darkmode, vpn, all"
             exit 1
             ;;
     esac
