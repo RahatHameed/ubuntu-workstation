@@ -143,6 +143,35 @@ install_theme: false
 font_scale: 1.25
 ```
 
+## Dark mode at sunset
+
+GNOME has no built-in day/night theme switching. Night Light is a different
+feature: it warms the screen's colour temperature and leaves the theme alone.
+
+The `darkmode` module installs `dark-at-sunset` and a systemd user timer that
+sets `org.gnome.desktop.interface color-scheme` to `prefer-dark` between sunset
+and sunrise, and back to `default` during the day. A timer rather than a GNOME
+extension, so it needs no logout and does not break on a GNOME upgrade.
+
+```bash
+./install.sh -m darkmode
+
+dark-at-sunset status     # coordinates, today's sunrise/sunset, current scheme
+dark-at-sunset dark       # force it, until the next check
+dark-at-sunset light
+systemctl --user disable --now dark-at-sunset.timer   # stop following the sun
+```
+
+Sunrise and sunset are computed locally from your latitude and longitude — no
+network, no location service. Coordinates default to those of the system
+timezone, taken from tzdata, which is accurate to the zone's reference city.
+Set `darkmode_latitude` and `darkmode_longitude` in the config if that is far
+from you: sunset in Freiburg differs from Berlin by roughly 20 minutes.
+
+The timer polls every 15 minutes rather than scheduling the exact transition,
+which keeps it correct across suspend, resume, travel and clock changes without
+holding any state.
+
 ## Uninstall
 
 Remove installed components:

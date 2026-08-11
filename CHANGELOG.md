@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- `darkmode` module: switches the GNOME colour scheme to dark at sunset and
+  back at sunrise, via a systemd user timer rather than a shell extension so it
+  needs no logout. Sunrise and sunset are computed locally from coordinates that
+  default to the system timezone's.
+
 ## [Unreleased]
 
 ### Added
