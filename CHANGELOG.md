@@ -10,6 +10,20 @@ All notable changes to this project will be documented in this file.
   back at sunrise, via a systemd user timer rather than a shell extension so it
   needs no logout. Sunrise and sunset are computed locally from coordinates that
   default to the system timezone's.
+- `dark-at-sunset` also follows Claude Code's theme, which has no "follow the
+  system" option of its own, by rewriting `theme` in `~/.claude/settings.json`
+  at each switch. The configured variant is kept, so `dark-daltonized` becomes
+  `light-daltonized`. Opt out with `--no-claude`.
+
+- `./uninstall.sh -m darkmode` — stops and removes the timer, service and
+  script, and is included in interactive and `--all` runs. The colour scheme and
+  Claude Code's theme are left as they are.
+
+### Fixed
+
+- `darkmode` module now sets GNOME Terminal's `theme-variant` to `system`.
+  Ubuntu ships it as `dark`, an app-level override that kept the terminal dark
+  through the day regardless of the colour scheme.
 
 ## [Unreleased]
 
