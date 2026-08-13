@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  -h, --help          Show this help message"
             echo "  -m, --module NAME   Uninstall specific module"
-            echo "                      Modules: shell, git, ssh, apps, docker, desktop, startup, vpn"
+            echo "                      Modules: shell, git, ssh, apps, docker, desktop, startup, darkmode, vpn"
             echo "  --all               Uninstall everything"
             echo "  --dry-run           Show what would be removed"
             echo ""
@@ -250,6 +250,61 @@ uninstall_startup() {
     fi
 }
 
+uninstall_darkmode() {
+    print_section "Uninstalling Dark Mode at Sunset"
+
+    local unit_dir="$HOME/.config/systemd/user"
+
+    # Stop the timer before removing the script it runs, or a tick landing
+    # mid-uninstall logs a failure for a unit that is on its way out anyway.
+    if systemctl --user list-unit-files dark-at-sunset.timer &>/dev/null; then
+        print_info "Stopping the timer..."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would disable dark-at-sunset.timer"
+        else
+            systemctl --user disable --now dark-at-sunset.timer 2>/dev/null || true
+            print_status "Timer stopped"
+        fi
+    fi
+
+    if [[ -f "$unit_dir/dark-at-sunset.timer" || -f "$unit_dir/dark-at-sunset.service" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would remove dark-at-sunset.{service,timer}"
+        else
+            rm -f "$unit_dir/dark-at-sunset.timer" "$unit_dir/dark-at-sunset.service"
+            systemctl --user daemon-reload
+            print_status "Units removed"
+        fi
+    fi
+
+    if [[ -f "$HOME/.local/bin/dark-at-sunset" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would remove ~/.local/bin/dark-at-sunset"
+        else
+            rm -f "$HOME/.local/bin/dark-at-sunset"
+            print_status "dark-at-sunset removed"
+        fi
+    fi
+
+    # Ubuntu's own default, not what the module found: whatever the terminal
+    # was pinned to before, 'system' is the sane state to leave behind now that
+    # nothing is automating the colour scheme.
+    if gsettings writable org.gnome.Terminal.Legacy.Settings theme-variant &>/dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would leave GNOME Terminal's theme variant at 'system'"
+        else
+            gsettings set org.gnome.Terminal.Legacy.Settings theme-variant "'system'" 2>/dev/null || true
+            print_status "GNOME Terminal left following the system theme"
+        fi
+    fi
+
+    # The colour scheme itself is deliberately left as-is: it is an ordinary
+    # desktop preference the user can change in Settings, and forcing it back to
+    # light during the evening would be a worse surprise than leaving it.
+    print_warning "Colour scheme left as it is (change it in Settings > Appearance)"
+    print_warning "Claude Code's theme left as it is (change it with /theme)"
+}
+
 uninstall_desktop() {
     print_section "Uninstalling Desktop Customizations"
 
@@ -358,6 +413,7 @@ run_interactive() {
     confirm "Uninstall Docker?" && uninstall_docker
     confirm "Remove desktop customizations?" && uninstall_desktop
     confirm "Remove login autostart entry?" && uninstall_startup
+    confirm "Stop following the sun for dark mode?" && uninstall_darkmode
     confirm "Uninstall Mullvad VPN?" && uninstall_vpn
 }
 
@@ -373,10 +429,11 @@ run_module() {
         docker) uninstall_docker ;;
         desktop) uninstall_desktop ;;
         startup) uninstall_startup ;;
+        darkmode) uninstall_darkmode ;;
         vpn) uninstall_vpn ;;
         *)
             print_error "Unknown module: $MODULE"
-            echo "Available modules: shell, git, ssh, apps, docker, desktop, startup, vpn"
+            echo "Available modules: shell, git, ssh, apps, docker, desktop, startup, darkmode, vpn"
             exit 1
             ;;
     esac
@@ -397,6 +454,7 @@ run_all() {
     fi
 
     uninstall_vpn
+    uninstall_darkmode
     uninstall_desktop
     uninstall_apps
     uninstall_docker

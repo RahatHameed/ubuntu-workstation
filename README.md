@@ -159,8 +159,23 @@ extension, so it needs no logout and does not break on a GNOME upgrade.
 dark-at-sunset status     # coordinates, today's sunrise/sunset, current scheme
 dark-at-sunset dark       # force it, until the next check
 dark-at-sunset light
+dark-at-sunset apply --no-claude    # switch the desktop only
 systemctl --user disable --now dark-at-sunset.timer   # stop following the sun
 ```
+
+Two things do not follow `color-scheme` on their own and are handled here:
+
+- **GNOME Terminal** keeps a separate `theme-variant` override that Ubuntu ships
+  set to `dark`, which pins the terminal dark all day however the desktop is
+  set. Installing the module sets it to `system`. If a terminal is still dark in
+  daylight, that override is why:
+  `gsettings get org.gnome.Terminal.Legacy.Settings theme-variant`.
+- **Claude Code** is a TUI with its own palette and offers no "follow the
+  system" theme — only `{dark,light}` x `{"", -daltonized, -ansi}`. Each switch
+  rewrites `theme` in `~/.claude/settings.json`, keeping whichever variant is
+  configured, so `dark-daltonized` becomes `light-daltonized` and not plain
+  `light`. Claude Code reads that file at startup, so it applies to the next
+  session, not one already open.
 
 Sunrise and sunset are computed locally from your latitude and longitude — no
 network, no location service. Coordinates default to those of the system
@@ -189,6 +204,10 @@ Remove installed components:
 - SSH keys are kept (remove manually if needed)
 - Git user.name/email kept
 - Base packages kept (zsh, plank, etc.)
+- `-m darkmode` stops the timer and removes the script, but leaves the colour
+  scheme and Claude Code's theme wherever they currently are — they are ordinary
+  preferences, and snapping the desktop back to light in the evening would be a
+  worse surprise than leaving it
 
 ## Directory Structure
 

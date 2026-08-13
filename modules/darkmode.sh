@@ -53,11 +53,21 @@ install_darkmode() {
         print_info "[DRY-RUN] Would install $BIN_DIR/dark-at-sunset"
         print_info "[DRY-RUN] Would write $UNIT_DIR/dark-at-sunset.{service,timer}"
         print_info "[DRY-RUN] Would enable dark-at-sunset.timer (checks every 15 min)"
+        print_info "[DRY-RUN] Would set GNOME Terminal's theme variant to 'system'"
         return 0
     fi
 
     run mkdir -p "$BIN_DIR" "$UNIT_DIR"
     run install -m 755 "$script" "$BIN_DIR/dark-at-sunset"
+
+    # Without this the terminal stays dark all day no matter what the colour
+    # scheme says: GNOME Terminal keeps its own theme-variant override, and
+    # Ubuntu ships it set to 'dark'. The profile's own use-theme-colors is a
+    # separate switch again, left alone here in case a custom palette is wanted.
+    if gsettings writable org.gnome.Terminal.Legacy.Settings theme-variant &>/dev/null; then
+        run gsettings set org.gnome.Terminal.Legacy.Settings theme-variant "'system'"
+        print_status "GNOME Terminal follows the colour scheme"
+    fi
 
     cat > "$UNIT_DIR/dark-at-sunset.service" << EOF
 [Unit]
@@ -94,5 +104,6 @@ EOF
     # shellcheck disable=SC2086
     "$BIN_DIR/dark-at-sunset" status $args | sed 's/^/    /'
     print_info "Force it either way with: dark-at-sunset dark|light"
+    print_info "Claude Code's theme follows too; it applies to the next session"
     print_info "Disable with: systemctl --user disable --now dark-at-sunset.timer"
 }
