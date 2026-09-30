@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `docker/docker-cleanup.sh` removes orphaned containers: ones whose image ID
+  no longer exists in the local store, so nothing can restart or rebuild them.
+  A container still running on an image *tag* that has since been rebuilt is
+  reported instead of removed - the usual state after building on a running
+  stack - and `--all-orphans` opts into removing those as well.
 - `darkmode` module: switches the GNOME colour scheme to dark at sunset and
   back at sunrise, via a systemd user timer rather than a shell extension so it
   needs no logout. Sunrise and sunset are computed locally from coordinates that
@@ -21,6 +26,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- `docker/docker-cleanup.sh` now removes only stopped containers (`exited`,
+  `created`, `dead`) instead of force-removing every container. It runs
+  automatically from `startup-office.sh`, where `docker rm -f $(docker ps -aq)`
+  killed containers that were deliberately left running.
 - `darkmode` module now sets GNOME Terminal's `theme-variant` to `system`.
   Ubuntu ships it as `dark`, an app-level override that kept the terminal dark
   through the day regardless of the colour scheme.

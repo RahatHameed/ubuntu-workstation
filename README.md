@@ -421,8 +421,19 @@ Start Plank dock with X11 backend (fixes Wayland compatibility):
 Fixes "port already in use" errors after restart:
 
 ```bash
-./docker/docker-cleanup.sh
+./docker/docker-cleanup.sh                # default cleanup
+./docker/docker-cleanup.sh --all-orphans  # also drop rebuilt-tag containers
 ```
+
+In order it kills orphaned `docker-proxy` processes, waits for the daemon,
+removes stopped containers (`exited`, `created`, `dead`), removes orphaned
+containers whose image ID is gone from the local store, and prunes unused
+networks. Running and paused containers are otherwise left alone.
+
+A container still running on an image tag that has since been rebuilt is only
+reported, not removed - that is the normal state after `docker build` on a
+running stack, and `docker compose up` recreates it. `--all-orphans` removes
+those too. Details go to `/tmp/docker-cleanup.log`.
 
 ### vpn/ipv6-disable.sh
 

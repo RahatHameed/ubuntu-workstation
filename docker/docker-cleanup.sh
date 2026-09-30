@@ -4,6 +4,24 @@
 
 LOG_FILE="/tmp/docker-cleanup.log"
 KILLED_COUNT=0
+ALL_ORPHANS=false
+
+for ARG in "$@"; do
+    case "$ARG" in
+        --all-orphans) ALL_ORPHANS=true ;;
+        -h|--help)
+            echo "Usage: $(basename "$0") [--all-orphans]"
+            echo
+            echo "  Kills orphaned docker-proxy processes, removes stopped containers,"
+            echo "  removes containers whose image no longer exists, prunes unused networks."
+            echo
+            echo "  --all-orphans  also remove containers still running on an image tag"
+            echo "                 that has since been rebuilt"
+            exit 0
+            ;;
+        *) echo "Unknown option: $ARG" >&2; exit 1 ;;
+    esac
+done
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S'): $1" >> "$LOG_FILE"
@@ -44,11 +62,48 @@ if [ $RETRIES -eq 0 ]; then
     exit 1
 fi
 
-# Remove any stale containers
-CONTAINERS=$(docker ps -aq 2>/dev/null)
-if [ -n "$CONTAINERS" ]; then
-    log "Removing stale containers..."
-    docker rm -f $CONTAINERS 2>/dev/null
+# Remove stopped containers only - running and paused ones are left alone
+STOPPED=$(docker ps -aq -f status=exited -f status=created -f status=dead 2>/dev/null)
+if [ -n "$STOPPED" ]; then
+    log "Removing stopped containers: $(echo "$STOPPED" | tr '\n' ' ')"
+    docker rm $STOPPED 2>/dev/null
+else
+    log "No stopped containers to remove"
+fi
+
+# Remove orphaned containers - ones whose image ID is gone from the local
+# store, so they can never be restarted or rebuilt from what they run on.
+#
+# A running container whose image *tag* still resolves is not truly parentless:
+# it is the normal result of rebuilding a tag while the old container keeps
+# running the previous layers, and `docker compose up` recreates it. Those are
+# only reported, unless --all-orphans is given.
+ORPHANS=""
+REBUILT=""
+for CONTAINER in $(docker ps -aq 2>/dev/null); do
+    IMAGE=$(docker inspect -f '{{.Image}}' "$CONTAINER" 2>/dev/null)
+    [ -n "$IMAGE" ] || continue
+    docker image inspect "$IMAGE" &>/dev/null && continue
+
+    NAME=$(docker inspect -f '{{.Name}}' "$CONTAINER" 2>/dev/null | sed 's|^/||')
+    TAG=$(docker inspect -f '{{.Config.Image}}' "$CONTAINER" 2>/dev/null)
+    if [ "$ALL_ORPHANS" != true ] && [ -n "$TAG" ] && docker image inspect "$TAG" &>/dev/null; then
+        REBUILT="$REBUILT $NAME"
+    else
+        ORPHANS="$ORPHANS $CONTAINER"
+        log "Orphan: $NAME (image $IMAGE no longer exists)"
+    fi
+done
+
+if [ -n "$ORPHANS" ]; then
+    log "Removing orphaned containers:$ORPHANS"
+    docker rm -f $ORPHANS 2>/dev/null
+else
+    log "No orphaned containers to remove"
+fi
+
+if [ -n "$REBUILT" ]; then
+    log "Left running on a rebuilt image tag:$REBUILT (--all-orphans removes these too)"
 fi
 
 # Prune orphan networks
