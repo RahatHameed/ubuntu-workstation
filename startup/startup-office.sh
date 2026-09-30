@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 pkill -9 -f docker-proxy 2>/dev/null
 
 phpstorm &
-slack &
+/opt/google/chrome/google-chrome --profile-directory=Default --app-id=cledakpmkdohcgoieiimockjbfhmmjde &  # Slack PWA
 teams-for-linux &
 google-chrome &
 /opt/google/chrome/google-chrome --profile-directory=Default --app-id=faolnafnngnfdaknnbpnkhgohbobgegn &  # Outlook PWA

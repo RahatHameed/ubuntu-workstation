@@ -46,7 +46,7 @@ cd ubuntu-workstation
 | App | Installation Method |
 |-----|---------------------|
 | Google Chrome | Official .deb |
-| Slack | Snap |
+| Slack | Chrome web app (registered PWA, `--app` launcher as fallback) |
 | Microsoft Teams | Snap |
 | JetBrains Toolbox | Official tarball |
 
@@ -386,7 +386,8 @@ See `vpn/providers/_template.sh` for a complete example with documentation.
 ### startup/startup-office.sh
 
 Launches work applications on login:
-- PhpStorm, Slack, Teams, Chrome, Plank, Docker Desktop, Terminal
+- PhpStorm, Slack (web app), Teams, Chrome, Outlook (web app), Plank,
+  Docker Desktop, Terminal
 
 **Setup as startup application:**
 

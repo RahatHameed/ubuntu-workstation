@@ -11,8 +11,121 @@ install_chrome() {
         "google-chrome"
 }
 
+# Slack as a Chrome web app rather than the snap. The snap is a whole second
+# Electron runtime for a client that is already a web app, and it is slower to
+# start and to update than the tab it wraps. Chrome is a dependency either way.
+#
+# Two kinds of Chrome web app can end up in the menu, and they do not behave the
+# same. A Chrome-registered PWA ("Install page as app" from Chrome's own UI) has
+# an app id, and launching that id returns to the window that is already open. A
+# --app=URL launcher has no app identity at all, so Chrome has nothing to match
+# against and every click opens another Slack window.
+#
+# Registering a PWA cannot be driven from the command line, so the --app
+# launcher stays as the fallback for a fresh machine. Once the real app is
+# installed the fallback is a duplicate that reopens the window-per-click
+# problem, so it gets cleared out.
+SLACK_URL="https://app.slack.com/client"
+SLACK_ICON_URL="https://a.slack-edge.com/80588/marketing/img/meta/slack_hash_256.png"
+
+# Print the launcher Chrome wrote for a registered Slack PWA, if there is one.
+# Chrome names those chrome-<app id>-Default.desktop and gives them --app-id;
+# the visible name comes from the site, so it is "<Workspace> - Slack" rather
+# than anything we could predict.
+chrome_slack_app() {
+    local desktop
+    for desktop in "$HOME/.local/share/applications"/chrome-*-Default.desktop; do
+        [[ -f "$desktop" ]] || continue
+        grep -q '^Exec=.*--app-id=' "$desktop" || continue
+        grep -qi '^Name=.*slack' "$desktop" || continue
+        echo "$desktop"
+        return 0
+    done
+    return 1
+}
+
 install_slack() {
-    snap_install "slack" "--classic"
+    if ! command_exists google-chrome; then
+        print_warning "Slack as a web app needs Google Chrome; install that first. Skipping."
+        return 0
+    fi
+
+    local desktop="$HOME/.local/share/applications/slack-pwa.desktop"
+    local icon_dir="$HOME/.local/share/icons/hicolor/256x256/apps"
+
+    local registered
+    if registered=$(chrome_slack_app); then
+        print_status "Slack is already installed as a Chrome app ($(basename "$registered"))"
+        if [[ -f "$desktop" ]]; then
+            print_info "Removing the older --app launcher; it opened a second window per click"
+            run rm -f "$desktop" "$icon_dir/slack-pwa.png"
+            run update-desktop-database "$HOME/.local/share/applications"
+        fi
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "[DRY-RUN] Would write $desktop"
+        print_info "[DRY-RUN] Would fetch the Slack icon into $icon_dir"
+        return 0
+    fi
+
+    run mkdir -p "$(dirname "$desktop")" "$icon_dir"
+
+    # A missing icon is not worth failing over: the launcher works without one,
+    # it just inherits Chrome's. Same treatment as JetBrains Toolbox above.
+    local icon="slack-pwa"
+    if [[ -f "$icon_dir/slack-pwa.png" ]]; then
+        :
+    elif curl -fsSL --max-time 30 -o "$icon_dir/slack-pwa.png" "$SLACK_ICON_URL"; then
+        chmod 644 "$icon_dir/slack-pwa.png"
+    else
+        rm -f "$icon_dir/slack-pwa.png"
+        icon="google-chrome"
+        print_warning "Could not fetch the Slack icon; the launcher will use Chrome's"
+    fi
+
+    # GTK trusts icon-theme.cache over the directory whenever one exists, so a
+    # cache older than the icon hides a file that is sitting right there. Refresh
+    # one if the tree has it, but never create one: without a cache the icon
+    # loader just scans the directory, which cannot go stale.
+    local icon_root="$HOME/.local/share/icons/hicolor"
+    if [[ -f "$icon_root/icon-theme.cache" ]] && command_exists gtk-update-icon-cache; then
+        run gtk-update-icon-cache -q -t "$icon_root"
+    fi
+
+    # No MimeType line on purpose. Claiming x-scheme-handler/slack would take
+    # slack:// links away from the desktop app for anyone who still has it, and
+    # this launcher cannot do anything useful with one.
+    #
+    # StartupWMClass is the class Chrome derives from the URL for --app windows.
+    # Without it the window lands under a generic Chrome icon in the dock rather
+    # than under this launcher.
+    cat > "$desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=Slack (PWA)
+GenericName=Slack Client for Linux
+Comment=Slack in a standalone Chrome window
+Categories=Network;InstantMessaging;
+Exec=/opt/google/chrome/google-chrome --profile-directory=Default --app=$SLACK_URL
+Icon=$icon
+StartupNotify=true
+StartupWMClass=app.slack.com__client
+EOF
+    run chmod 644 "$desktop"
+    run update-desktop-database "$HOME/.local/share/applications"
+    print_status "Slack installed as a Chrome web app"
+    print_info "Clicking this launcher opens a new window every time. For one window"
+    print_info "that comes back to the front, open $SLACK_URL in Chrome and use the"
+    print_info "address bar's install button (or ⋮ > Cast, save and share > Install"
+    print_info "page as app); re-running this module then drops the launcher."
+
+    if snap_installed "slack"; then
+        print_warning "The Slack snap is still installed: sudo snap remove slack"
+    fi
 }
 
 install_teams() {

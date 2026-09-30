@@ -25,6 +25,18 @@ All notable changes to this project will be documented in this file.
   script, and is included in interactive and `--all` runs. The colour scheme and
   Claude Code's theme are left as they are.
 
+### Changed
+
+- Slack is installed as a Chrome web app instead of the snap — a second Electron
+  runtime for a client that is already a web app. A Chrome-registered PWA is
+  preferred when one is installed: it has an app id, so its launcher and
+  `startup-office.sh` both return to the window that is already open. Where
+  there is none the module writes a `--app` launcher (its own icon, dock entry
+  and `StartupWMClass`) as a fallback, and clears it out once the real app
+  appears — a `--app` window has no app identity, so every click on it opened
+  another Slack window. `./uninstall.sh -m apps` removes the fallback launcher,
+  and still removes the snap for anyone who has one.
+
 ### Fixed
 
 - `docker/docker-cleanup.sh` now removes only stopped containers (`exited`,

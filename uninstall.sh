@@ -153,6 +153,23 @@ uninstall_ssh() {
 uninstall_apps() {
     print_section "Uninstalling Applications"
 
+    # Slack web app. Only the --app launcher this repo writes; a Chrome-registered
+    # PWA lives in the browser profile and can only be removed from Chrome
+    # itself. The snap stays in the list below so an install from before the
+    # switch is cleaned up too.
+    local slack_desktop="$HOME/.local/share/applications/slack-pwa.desktop"
+    if [[ -f "$slack_desktop" ]]; then
+        print_info "Removing the Slack web app..."
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "[DRY-RUN] Would remove $slack_desktop and its icon"
+        else
+            rm -f "$slack_desktop"
+            rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/slack-pwa.png"
+            update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+            print_status "Slack web app removed"
+        fi
+    fi
+
     # Snap apps
     local snap_apps=("slack" "teams-for-linux" "code" "spotify" "discord" "postman" "dbeaver-ce")
     for app in "${snap_apps[@]}"; do
