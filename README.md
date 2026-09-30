@@ -423,6 +423,7 @@ Fixes "port already in use" errors after restart:
 ```bash
 ./docker/docker-cleanup.sh                # default cleanup
 ./docker/docker-cleanup.sh --all-orphans  # also drop rebuilt-tag containers
+./docker/docker-cleanup.sh --all          # remove every container, running or not
 ```
 
 In order it kills orphaned `docker-proxy` processes, waits for the daemon,
@@ -433,7 +434,8 @@ networks. Running and paused containers are otherwise left alone.
 A container still running on an image tag that has since been rebuilt is only
 reported, not removed - that is the normal state after `docker build` on a
 running stack, and `docker compose up` recreates it. `--all-orphans` removes
-those too. Details go to `/tmp/docker-cleanup.log`.
+those too. `--all` removes every container, running or not. Details go to
+`/tmp/docker-cleanup.log`.
 
 ### vpn/ipv6-disable.sh
 

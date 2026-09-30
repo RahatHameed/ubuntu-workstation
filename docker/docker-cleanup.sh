@@ -5,18 +5,21 @@
 LOG_FILE="/tmp/docker-cleanup.log"
 KILLED_COUNT=0
 ALL_ORPHANS=false
+ALL=false
 
 for ARG in "$@"; do
     case "$ARG" in
         --all-orphans) ALL_ORPHANS=true ;;
+        --all) ALL=true ;;
         -h|--help)
-            echo "Usage: $(basename "$0") [--all-orphans]"
+            echo "Usage: $(basename "$0") [--all-orphans | --all]"
             echo
             echo "  Kills orphaned docker-proxy processes, removes stopped containers,"
             echo "  removes containers whose image no longer exists, prunes unused networks."
             echo
             echo "  --all-orphans  also remove containers still running on an image tag"
             echo "                 that has since been rebuilt"
+            echo "  --all          remove every container, running or not"
             exit 0
             ;;
         *) echo "Unknown option: $ARG" >&2; exit 1 ;;
@@ -60,6 +63,18 @@ done
 if [ $RETRIES -eq 0 ]; then
     log "Docker daemon not ready after 30s, skipping container cleanup"
     exit 1
+fi
+
+# --all: remove every container, running or not, instead of the selective
+# cleanup below
+if [ "$ALL" = true ]; then
+    ALL_CONTAINERS=$(docker ps -aq 2>/dev/null)
+    if [ -n "$ALL_CONTAINERS" ]; then
+        log "Removing all containers: $(echo "$ALL_CONTAINERS" | tr '\n' ' ')"
+        docker rm -f $ALL_CONTAINERS >/dev/null 2>&1
+    else
+        log "No containers to remove"
+    fi
 fi
 
 # Remove stopped containers only - running and paused ones are left alone

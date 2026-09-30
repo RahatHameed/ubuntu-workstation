@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
   A container still running on an image *tag* that has since been rebuilt is
   reported instead of removed - the usual state after building on a running
   stack - and `--all-orphans` opts into removing those as well.
+- `docker/docker-cleanup.sh --all` removes every container, running or not.
 - `darkmode` module: switches the GNOME colour scheme to dark at sunset and
   back at sunrise, via a systemd user timer rather than a shell extension so it
   needs no logout. Sunrise and sunset are computed locally from coordinates that
