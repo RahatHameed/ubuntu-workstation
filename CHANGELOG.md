@@ -43,9 +43,24 @@ All notable changes to this project will be documented in this file.
   `created`, `dead`) instead of force-removing every container. It runs
   automatically from `startup-office.sh`, where `docker rm -f $(docker ps -aq)`
   killed containers that were deliberately left running.
+- `dark-at-sunset` now swaps GNOME Terminal's profile colours, turning
+  `use-theme-colors` off to do it. Following the system theme does not follow
+  the colour scheme: Yaru hardcodes `terminal-window .terminal-screen` to the
+  aubergine `#300A24` in its light stylesheet as well as its dark one, so the
+  terminal screen stayed dark at noon while its titlebar and tabs correctly
+  went light. Opt out with `--no-terminal`; the palette is left alone.
+- `dark-at-sunset` now swaps `gtk-theme` as well, between the light and dark
+  variant of whatever is configured (`Yaru` and `Yaru-dark`, the accent kept).
+  GTK3 apps on Ubuntu ignore `color-scheme` — their
+  `gtk-application-prefer-dark-theme` stays off however that key is set — so
+  GNOME Terminal, and every other GTK3 window, previously kept the appearance it
+  started with all day. Opt out with `--no-gtk-theme`.
 - `darkmode` module now sets GNOME Terminal's `theme-variant` to `system`.
-  Ubuntu ships it as `dark`, an app-level override that kept the terminal dark
-  through the day regardless of the colour scheme.
+  Ubuntu ships it as `dark`, an app-level override that kept the terminal's
+  window chrome dark through the day regardless of the colour scheme.
+  `gnome-terminal-server` reads it once at startup, so the module now says when
+  terminals need closing for the change to land. The screen inside the window is
+  a separate matter, handled above.
 
 ## [Unreleased]
 

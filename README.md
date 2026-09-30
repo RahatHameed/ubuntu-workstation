@@ -156,20 +156,42 @@ extension, so it needs no logout and does not break on a GNOME upgrade.
 ```bash
 ./install.sh -m darkmode
 
-dark-at-sunset status     # coordinates, today's sunrise/sunset, current scheme
+dark-at-sunset status     # coordinates, sunrise/sunset, scheme and themes
 dark-at-sunset dark       # force it, until the next check
 dark-at-sunset light
 dark-at-sunset apply --no-claude    # switch the desktop only
 systemctl --user disable --now dark-at-sunset.timer   # stop following the sun
 ```
 
-Two things do not follow `color-scheme` on their own and are handled here:
+Setting `color-scheme` is not enough on its own. Four things are handled here:
 
-- **GNOME Terminal** keeps a separate `theme-variant` override that Ubuntu ships
-  set to `dark`, which pins the terminal dark all day however the desktop is
-  set. Installing the module sets it to `system`. If a terminal is still dark in
-  daylight, that override is why:
-  `gsettings get org.gnome.Terminal.Legacy.Settings theme-variant`.
+- **GTK3 apps**, GNOME Terminal among them, ignore `color-scheme` entirely on
+  Ubuntu — their `gtk-application-prefer-dark-theme` stays off however that key
+  is set. The dark variant comes from the theme name instead, which is why
+  GNOME's own Appearance panel changes both. So each switch also swaps
+  `gtk-theme` between the light and dark variant of whatever is configured:
+  `Yaru` and `Yaru-dark`, with the accent kept, so `Yaru-blue` becomes
+  `Yaru-blue-dark`. The counterpart has to be installed, or the theme is left
+  alone. Running apps restyle at once, no restart — `--no-gtk-theme` opts out.
+- **GNOME Terminal's window** keeps a separate `theme-variant` override on top
+  of that, which Ubuntu ships set to `dark` — it pins the titlebar, tabs and
+  menus dark all day however the desktop is set. Installing the module sets it
+  to `system`. That reaches the chrome only, not the screen inside it.
+- **GNOME Terminal's screen** takes its colours from the profile, and a profile
+  set to *Use colours from system theme* does not follow the scheme either:
+  Yaru hardcodes the Ubuntu aubergine for it in the **light** stylesheet as well
+  as the dark one, byte for byte —
+
+  ```css
+  terminal-window .terminal-screen { background-color: #300A24; color: white; }
+  ```
+
+  which is a terminal that is aubergine at noon and aubergine at midnight. So
+  each switch turns `use-theme-colors` off and sets the profile's own pair
+  instead: `#FFFFFF` on `#171421` by day, Ubuntu's `#300A24` by night. VTE
+  restyles open windows at once, nothing needs closing. `--no-terminal` opts
+  out, and the 16-colour palette is never touched — but a custom background set
+  in the terminal's preferences will be overwritten at the next switch.
 - **Claude Code** is a TUI with its own palette and offers no "follow the
   system" theme — only `{dark,light}` x `{"", -daltonized, -ansi}`. Each switch
   rewrites `theme` in `~/.claude/settings.json`, keeping whichever variant is

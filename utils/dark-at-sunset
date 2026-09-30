@@ -10,6 +10,17 @@ Coordinates default to those of the system timezone, from tzdata's zone.tab.
 That is accurate to the zone's reference city, which is within a few minutes of
 sunset for anywhere in the same country; override with --lat/--lon if you care.
 
+Setting the colour scheme is not enough on its own for GTK3 apps: on Ubuntu they
+take their dark variant from the theme name, not from colour-scheme, so the
+gtk-theme setting is swapped between Yaru and Yaru-dark too. Without that,
+GNOME Terminal and every other GTK3 window stays as it was. See sync_gtk_theme.
+
+GNOME Terminal needs more than the theme name again, and for a different
+reason: Yaru paints terminal-screen the Ubuntu aubergine #300A24 in its light
+stylesheet as well as its dark one, so a profile left on "use colours from
+system theme" is dark at noon. The profile's own colours are swapped instead.
+See sync_terminal.
+
 Claude Code's own theme is followed along too, since it is a TUI with its own
 palette that does not read the desktop's preference. See sync_claude.
 
@@ -34,7 +45,22 @@ LIGHT = "default"
 
 ZONE_TAB = "/usr/share/zoneinfo/zone.tab"
 
+GTK_THEME_KEY = "gtk-theme"
+# Yaru's names are Yaru[-accent][-dark][-hdpi|-xhdpi], so -dark belongs before
+# any hidpi suffix rather than at the end.
+HIDPI_SUFFIXES = ("-hdpi", "-xhdpi")
+THEME_DIRS = (Path("/usr/share/themes"),
+              Path.home() / ".themes",
+              Path.home() / ".local" / "share" / "themes")
+
 CLAUDE_SETTINGS = Path.home() / ".claude" / "settings.json"
+
+TERM_LIST = "org.gnome.Terminal.ProfilesList"
+TERM_PROFILE = ("org.gnome.Terminal.Legacy.Profile:"
+                "/org/gnome/terminal/legacy/profiles:/:{uuid}/")
+# Dark keeps Ubuntu's aubergine, so nights look as they always have; light is
+# the pair GNOME Terminal itself defaults to.
+TERM_COLORS = {DARK: ("#300A24", "#FFFFFF"), LIGHT: ("#FFFFFF", "#171421")}
 
 
 def current_timezone() -> str:
@@ -123,6 +149,97 @@ def set_scheme(value: str) -> bool:
     return subprocess.run(["gsettings", "set", SCHEMA, KEY, value]).returncode == 0
 
 
+def theme_installed(name: str) -> bool:
+    return any((d / name / "gtk-3.0").is_dir() for d in THEME_DIRS)
+
+
+def gtk_theme_for(scheme: str, current: str) -> str | None:
+    """The counterpart of a GTK theme name for a colour scheme, or None if none.
+
+    Handles the Yaru naming above and the plain Adwaita/Adwaita-dark pattern,
+    which is the same rule with no accent or hidpi part. Returns None when the
+    counterpart is not installed, rather than pointing gtk-theme at nothing.
+    """
+    stem, suffix = current, ""
+    for candidate in HIDPI_SUFFIXES:
+        if stem.endswith(candidate):
+            stem, suffix = stem[:-len(candidate)], candidate
+            break
+    is_dark = stem.endswith("-dark")
+    if is_dark:
+        stem = stem[:-len("-dark")]
+
+    want_dark = scheme == DARK
+    if want_dark == is_dark:
+        return current
+    wanted = f"{stem}-dark{suffix}" if want_dark else f"{stem}{suffix}"
+    return wanted if theme_installed(wanted) else None
+
+
+def sync_gtk_theme(scheme: str) -> str | None:
+    """Swap gtk-theme to the matching variant. Returns a note.
+
+    GTK3 apps on Ubuntu do not follow colour-scheme at all -- their
+    gtk-application-prefer-dark-theme stays off however that key is set, which is
+    why GNOME's own Appearance panel changes the theme name as well as the
+    scheme. Doing the same here is what actually turns GNOME Terminal, and any
+    other GTK3 window, dark. Running apps pick the new theme up immediately.
+    """
+    out = subprocess.run(["gsettings", "get", SCHEMA, GTK_THEME_KEY],
+                         capture_output=True, text=True)
+    have = out.stdout.strip().strip("'")
+    if not have:
+        return None
+
+    want = gtk_theme_for(scheme, have)
+    if want is None:
+        return f"gtk theme: {have} has no counterpart installed, left alone"
+    if want == have:
+        return None
+    if subprocess.run(["gsettings", "set", SCHEMA, GTK_THEME_KEY, want]).returncode:
+        return "gtk theme: gsettings failed"
+    return f"gtk theme: {have} -> {want}"
+
+
+def terminal_profile() -> str | None:
+    """The default GNOME Terminal profile's UUID, or None if there is not one."""
+    out = subprocess.run(["gsettings", "get", TERM_LIST, "default"],
+                         capture_output=True, text=True)
+    if out.returncode:
+        return None
+    return out.stdout.strip().strip("'") or None
+
+
+def sync_terminal(scheme: str) -> str | None:
+    """Swap the default terminal profile's colours. Returns a note.
+
+    theme-variant only gets GNOME Terminal's window chrome to follow the scheme;
+    the screen itself takes its colours from the profile, and a profile set to
+    use the theme's gets Yaru's hardcoded aubergine in either variant. So
+    use-theme-colors is turned off and the two colours set here instead. VTE
+    applies them to windows that are already open, so nothing needs closing.
+    """
+    uuid = terminal_profile()
+    if uuid is None:
+        return None
+    path = TERM_PROFILE.format(uuid=uuid)
+    bg, fg = TERM_COLORS[scheme]
+
+    out = subprocess.run(["gsettings", "get", path, "background-color"],
+                         capture_output=True, text=True)
+    if out.returncode:
+        return None
+    had = out.stdout.strip().strip("'")
+
+    # use-theme-colors last: while it is on the other two are ignored, so
+    # turning it off first would show the old colours for a frame.
+    for key, value in (("background-color", bg), ("foreground-color", fg),
+                       ("use-theme-colors", "false")):
+        if subprocess.run(["gsettings", "set", path, key, value]).returncode:
+            return f"terminal: could not set {key}"
+    return None if had.upper() == bg.upper() else f"terminal: {had} -> {bg}"
+
+
 def claude_theme_for(scheme: str, current: str) -> str:
     """The Claude Code theme matching a GNOME colour scheme.
 
@@ -185,6 +302,10 @@ def main() -> int:
     ap.add_argument("--lon", type=float, help="longitude, east positive")
     ap.add_argument("--no-claude", action="store_true",
                     help="leave Claude Code's theme alone")
+    ap.add_argument("--no-gtk-theme", action="store_true",
+                    help="leave the GTK theme alone; GTK3 apps will not switch")
+    ap.add_argument("--no-terminal", action="store_true",
+                    help="leave GNOME Terminal's profile colours alone")
     args = ap.parse_args()
 
     tz = current_timezone()
@@ -210,6 +331,19 @@ def main() -> int:
         print(f"timezone : {tz}  ({lat:.2f}, {lon:.2f})")
         print(f"today    : {why}")
         print(f"scheme   : {have}   wanted: {want}")
+        if not args.no_gtk_theme:
+            out = subprocess.run(["gsettings", "get", SCHEMA, GTK_THEME_KEY],
+                                 capture_output=True, text=True)
+            theme = out.stdout.strip().strip("'")
+            print(f"gtk theme: {theme}   wanted: {gtk_theme_for(want, theme) or theme}")
+        if not args.no_terminal:
+            uuid = terminal_profile()
+            if uuid:
+                out = subprocess.run(
+                    ["gsettings", "get", TERM_PROFILE.format(uuid=uuid),
+                     "background-color"], capture_output=True, text=True)
+                bg = out.stdout.strip().strip("'")
+                print(f"terminal : {bg}   wanted: {TERM_COLORS[want][0]}")
         if not args.no_claude and CLAUDE_SETTINGS.is_file():
             try:
                 theme = json.loads(CLAUDE_SETTINGS.read_text(encoding="utf-8")).get("theme", "unset")
@@ -217,6 +351,21 @@ def main() -> int:
                 theme = "unreadable"
             print(f"claude   : {theme}   wanted: {claude_theme_for(want, str(theme))}")
         return 0
+
+    # Before the scheme, so the two do not disagree for a frame, and outside the
+    # have == want check: the theme can be changed on its own in the Appearance
+    # panel, so it may need catching up when the scheme is already right.
+    if not args.no_gtk_theme:
+        note = sync_gtk_theme(want)
+        if note:
+            print(f"dark-at-sunset: {note}")
+
+    # Same reasoning as the theme above: the profile can be edited in the
+    # terminal's own preferences, so it may need catching up on its own.
+    if not args.no_terminal:
+        note = sync_terminal(want)
+        if note:
+            print(f"dark-at-sunset: {note}")
 
     if have == want:
         print(f"dark-at-sunset: already {want} ({why})")

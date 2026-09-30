@@ -9,6 +9,12 @@
 # it warms the screen's colour temperature and leaves the theme alone. A systemd
 # user timer is used rather than a shell extension, so it needs no logout to take
 # effect and does not break on a GNOME upgrade.
+#
+# The switcher moves the GTK theme along with the colour scheme, because GTK3
+# apps on Ubuntu take their dark variant from the theme name and ignore
+# color-scheme. It swaps GNOME Terminal's profile colours as well, because Yaru
+# hardcodes the aubergine terminal background in its light stylesheet too.
+# Nothing to configure for either here; see utils/dark-at-sunset.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
@@ -54,19 +60,27 @@ install_darkmode() {
         print_info "[DRY-RUN] Would write $UNIT_DIR/dark-at-sunset.{service,timer}"
         print_info "[DRY-RUN] Would enable dark-at-sunset.timer (checks every 15 min)"
         print_info "[DRY-RUN] Would set GNOME Terminal's theme variant to 'system'"
+        print_info "[DRY-RUN] Would let the switcher own the terminal profile's colours"
         return 0
     fi
 
     run mkdir -p "$BIN_DIR" "$UNIT_DIR"
     run install -m 755 "$script" "$BIN_DIR/dark-at-sunset"
 
-    # Without this the terminal stays dark all day no matter what the colour
-    # scheme says: GNOME Terminal keeps its own theme-variant override, and
-    # Ubuntu ships it set to 'dark'. The profile's own use-theme-colors is a
-    # separate switch again, left alone here in case a custom palette is wanted.
+    # Without this the terminal's window chrome stays dark all day no matter what
+    # the colour scheme says: GNOME Terminal keeps its own theme-variant
+    # override, and Ubuntu ships it set to 'dark'. This only reaches the chrome;
+    # the screen's own colours are the switcher's job, see sync_terminal there.
     if gsettings writable org.gnome.Terminal.Legacy.Settings theme-variant &>/dev/null; then
+        local had
+        had=$(gsettings get org.gnome.Terminal.Legacy.Settings theme-variant 2>/dev/null | tr -d "\"'")
         run gsettings set org.gnome.Terminal.Legacy.Settings theme-variant "'system'"
         print_status "GNOME Terminal follows the colour scheme"
+        # gnome-terminal-server applies the override once, when it starts, so a
+        # terminal open since before this runs keeps the variant it was born with.
+        if [[ "$had" == "dark" || "$had" == "light" ]]; then
+            print_warning "Close every terminal window once (or log out) for that to take effect"
+        fi
     fi
 
     cat > "$UNIT_DIR/dark-at-sunset.service" << EOF
